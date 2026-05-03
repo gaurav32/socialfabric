@@ -28,7 +28,7 @@ const STATS = [
 export default function PreLoginScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { user, loading, signInWithGoogle, signInWithPhone, error } = useAuth();
+  const { user, loading, promptGoogleSignIn, signInWithPhone, error } = useAuth();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
@@ -56,7 +56,7 @@ export default function PreLoginScreen() {
 
   const handleGoogle = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    await signInWithGoogle();
+    await promptGoogleSignIn();
   };
 
   const handlePhone = async () => {

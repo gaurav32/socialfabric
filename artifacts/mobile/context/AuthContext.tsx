@@ -1,5 +1,4 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import {
   GoogleAuthProvider,
   User,
@@ -7,19 +6,18 @@ import {
   signInWithCredential,
   signOut,
 } from "firebase/auth";
+import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser";
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { Platform } from "react-native";
 
 import { auth } from "@/lib/firebase";
 
-GoogleSignin.configure({
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-});
+WebBrowser.maybeCompleteAuthSession();
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signInWithGoogle: () => Promise<void>;
+  promptGoogleSignIn: () => Promise<void>;
   signInWithPhone: () => Promise<void>;
   logout: () => Promise<void>;
   error: string | null;
@@ -28,7 +26,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  signInWithGoogle: async () => {},
+  promptGoogleSignIn: async () => {},
   signInWithPhone: async () => {},
   logout: async () => {},
   error: null,
@@ -39,6 +37,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  });
+
+  // Handle Google OAuth response
+  useEffect(() => {
+    if (response?.type === "success") {
+      const { id_token } = response.params;
+      const credential = GoogleAuthProvider.credential(id_token);
+      signInWithCredential(auth, credential).catch((e: unknown) => {
+        const msg = e instanceof Error ? e.message : "Google sign-in failed";
+        setError(msg);
+      });
+    } else if (response?.type === "error") {
+      setError("Google sign-in was cancelled or failed.");
+    }
+  }, [response]);
+
+  // Listen to Firebase auth state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
@@ -52,22 +70,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return unsubscribe;
   }, []);
 
-  const signInWithGoogle = async () => {
+  const promptGoogleSignIn = async () => {
     setError(null);
-    try {
-      if (Platform.OS === "web") {
-        setError("Google Sign-In is not supported on web preview. Please use the Expo Go app on your device.");
-        return;
-      }
-      await GoogleSignin.hasPlayServices();
-      const response = await GoogleSignin.signIn();
-      const tokens = await GoogleSignin.getTokens();
-      const credential = GoogleAuthProvider.credential(tokens.idToken);
-      await signInWithCredential(auth, credential);
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Google sign-in failed";
-      setError(msg);
+    if (!request) {
+      setError("Google Sign-In is not ready yet. Please try again.");
+      return;
     }
+    await promptAsync();
   };
 
   const signInWithPhone = async () => {
@@ -78,9 +87,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     try {
       await signOut(auth);
-      if (Platform.OS !== "web") {
-        try { await GoogleSignin.signOut(); } catch {}
-      }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Sign out failed";
       setError(msg);
@@ -88,7 +94,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signInWithPhone, logout, error }}>
+    <AuthContext.Provider
+      value={{ user, loading, promptGoogleSignIn, signInWithPhone, logout, error }}
+    >
       {children}
     </AuthContext.Provider>
   );

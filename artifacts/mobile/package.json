@@ -56,7 +56,7 @@
     "zod-validation-error": "^3.4.0"
   },
   "dependencies": {
-    "@react-native-google-signin/google-signin": "^16.1.2",
+    "expo-auth-session": "^7.0.11",
     "firebase": "^12.12.1"
   }
 }
