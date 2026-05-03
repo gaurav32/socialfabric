@@ -3,21 +3,19 @@ import { google } from "googleapis";
 
 const router: IRouter = Router();
 
-function getOAuthClient(redirectUri: string) {
+function getOAuthClient() {
   const clientId = process.env["EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID"];
   const clientSecret = process.env["GOOGLE_OAUTH_CLIENT_SECRET"];
+  const callbackUrl = process.env["GOOGLE_OAUTH_CALLBACK_URL"];
 
   if (!clientId || !clientSecret) {
     throw new Error("Missing EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID or GOOGLE_OAUTH_CLIENT_SECRET");
   }
+  if (!callbackUrl) {
+    throw new Error("Missing GOOGLE_OAUTH_CALLBACK_URL");
+  }
 
-  return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
-}
-
-function getCallbackUrl(req: Parameters<typeof router.get>[1] extends (req: infer R, ...args: unknown[]) => unknown ? R : never): string {
-  const proto = req.headers["x-forwarded-proto"] ?? req.protocol;
-  const host = req.headers["x-forwarded-host"] ?? req.headers.host;
-  return `${proto}://${host}/api/auth/google/callback`;
+  return { client: new google.auth.OAuth2(clientId, clientSecret, callbackUrl), callbackUrl };
 }
 
 /**
@@ -34,8 +32,7 @@ router.get("/auth/google/start", (req, res) => {
       return;
     }
 
-    const callbackUrl = getCallbackUrl(req as never);
-    const oauth2Client = getOAuthClient(callbackUrl);
+    const { client: oauth2Client } = getOAuthClient();
 
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: "online",
@@ -76,8 +73,7 @@ router.get("/auth/google/callback", async (req, res) => {
       return;
     }
 
-    const callbackUrl = getCallbackUrl(req as never);
-    const oauth2Client = getOAuthClient(callbackUrl);
+    const { client: oauth2Client } = getOAuthClient();
     const { tokens } = await oauth2Client.getToken(code);
 
     const idToken = tokens.id_token;
