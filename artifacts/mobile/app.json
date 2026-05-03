@@ -11,12 +11,15 @@
     "splash": {
       "image": "./assets/images/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#E8E6FF"
     },
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.socialfabric.mobile"
     },
-    "android": {},
+    "android": {
+      "package": "com.socialfabric.mobile"
+    },
     "web": {
       "favicon": "./assets/images/icon.png"
     },
