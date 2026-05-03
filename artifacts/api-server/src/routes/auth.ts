@@ -85,33 +85,10 @@ router.get("/auth/google/callback", async (req, res) => {
       const separator = appRedirectUri.includes("?") ? "&" : "?";
       const finalUrl = `${appRedirectUri}${separator}id_token=${encodeURIComponent(idToken)}`;
       req.log.info({ finalUrl }, "Redirecting back to app");
-      // For custom schemes (exp://, mobile://) the redirect may not work in all browsers.
-      // Return an HTML page that tries window.location first, then shows the token for manual use.
-      res.send(`<!DOCTYPE html>
-<html>
-<head><title>Signing in…</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-  body { font-family: system-ui, sans-serif; display:flex; flex-direction:column;
-         align-items:center; justify-content:center; min-height:100vh; margin:0;
-         background:#F0F2FF; color:#1a1a2e; }
-  h2 { color:#5B4FE8; margin-bottom:8px; }
-  p  { color:#666; margin:4px 0; }
-  .btn { margin-top:20px; padding:14px 28px; background:#5B4FE8; color:#fff;
-         border:none; border-radius:12px; font-size:16px; cursor:pointer;
-         text-decoration:none; display:inline-block; }
-</style>
-</head>
-<body>
-<h2>✓ Signed in with Google</h2>
-<p>Returning to Social Fabric…</p>
-<a class="btn" href="${finalUrl}">Open App</a>
-<script>
-  // Try to redirect automatically
-  setTimeout(function() { window.location.href = ${JSON.stringify(finalUrl)}; }, 300);
-</script>
-</body>
-</html>`);
+      // 302 redirect — Chrome Custom Tabs detects this and closes the tab,
+      // signalling openAuthSessionAsync with the result URL. This is more
+      // reliable than a JS redirect for custom schemes (exp://, mobile://).
+      res.redirect(finalUrl);
     } else {
       res.status(200).send("Sign-in complete. You can close this window.");
     }

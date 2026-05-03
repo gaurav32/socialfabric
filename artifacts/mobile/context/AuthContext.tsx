@@ -9,7 +9,7 @@ import {
 } from "firebase/auth";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Platform } from "react-native";
 
 import { auth } from "@/lib/firebase";
@@ -38,10 +38,48 @@ const AuthContext = createContext<AuthContextType>({
   error: null,
 });
 
+function extractIdToken(url: string): string | null {
+  try {
+    const parsed = Linking.parse(url);
+    const token = parsed.queryParams?.["id_token"];
+    return typeof token === "string" ? token : null;
+  } catch {
+    return null;
+  }
+}
+
+async function firebaseSignInWithToken(idToken: string) {
+  const credential = GoogleAuthProvider.credential(idToken);
+  await signInWithCredential(auth, credential);
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const googlePendingRef = useRef(false);
+
+  // Safety-net: catches exp:// deep links if openAuthSessionAsync returns
+  // "cancel" instead of "success" (e.g. Chrome dispatches an Android intent
+  // and the Custom Tab closes before returning the URL to the JS layer).
+  useEffect(() => {
+    function handleUrl({ url }: { url: string }) {
+      if (!googlePendingRef.current) return;
+      if (!url.includes("google-callback")) return;
+      const idToken = extractIdToken(url);
+      if (idToken) {
+        googlePendingRef.current = false;
+        firebaseSignInWithToken(idToken).catch((e: unknown) => {
+          setError(e instanceof Error ? e.message : "Firebase sign-in failed");
+        });
+      }
+    }
+
+    const sub = Linking.addEventListener("url", handleUrl);
+    // Handle cold-start deep link
+    Linking.getInitialURL().then((url) => { if (url) handleUrl({ url }); });
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -56,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return unsubscribe;
   }, []);
 
-  /** Web: Firebase signInWithPopup (works natively in browsers) */
+  /** Web: Firebase handles the popup natively — no server proxy needed */
   const signInWithGoogleWeb = async () => {
     const provider = new GoogleAuthProvider();
     provider.addScope("email");
@@ -64,34 +102,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await signInWithPopup(auth, provider);
   };
 
-  /** Native (Android/iOS): server-side OAuth proxy via openAuthSessionAsync */
+  /** Native: server-side OAuth proxy → openAuthSessionAsync */
   const signInWithGoogleNative = async () => {
     const appRedirectUri = Linking.createURL("auth/google-callback");
     const startUrl =
       `${API_ORIGIN}/api/auth/google/start` +
       `?app_redirect_uri=${encodeURIComponent(appRedirectUri)}`;
 
+    googlePendingRef.current = true;
+
     const result = await WebBrowser.openAuthSessionAsync(startUrl, appRedirectUri);
 
-    if (result.type === "cancel" || result.type === "dismiss") {
-      setError("Sign-in was cancelled.");
+    if (result.type === "success") {
+      googlePendingRef.current = false;
+      const idToken = extractIdToken(result.url);
+      if (idToken) {
+        await firebaseSignInWithToken(idToken);
+      } else {
+        const parsed = Linking.parse(result.url);
+        const oauthError = parsed.queryParams?.["error"];
+        setError(oauthError ? String(oauthError) : "No token received — please try again.");
+      }
       return;
     }
 
-    if (result.type === "success") {
-      const parsed = Linking.parse(result.url);
-      const idToken = parsed.queryParams?.["id_token"];
-      const oauthError = parsed.queryParams?.["error"];
+    // "cancel" or "dismiss" — might still succeed via the Linking listener above
+    // (Chrome may have dispatched an intent before closing the tab).
+    // Wait briefly to see if the Linking listener fires.
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      if (oauthError) {
-        setError(String(oauthError));
-        return;
-      }
-      if (idToken && typeof idToken === "string") {
-        const credential = GoogleAuthProvider.credential(idToken);
-        await signInWithCredential(auth, credential);
-      } else {
-        setError("No token received — please try again.");
+    if (googlePendingRef.current) {
+      // Linking listener didn't fire either — user genuinely cancelled
+      googlePendingRef.current = false;
+      if (result.type === "cancel" || result.type === "dismiss") {
+        setError("Sign-in was cancelled.");
       }
     }
   };
@@ -106,7 +150,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Google sign-in failed";
-      // Ignore user-closed popup
       if (msg.includes("popup-closed-by-user") || msg.includes("cancelled")) return;
       setError(msg);
     }
