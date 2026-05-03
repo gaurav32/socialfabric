@@ -25,6 +25,7 @@ function RootLayoutNav() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="auth/email" />
+      <Stack.Screen name="auth/google-callback" />
       <Stack.Screen name="(tabs)" />
     </Stack>
   );
