@@ -102,9 +102,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await signInWithPopup(auth, provider);
   };
 
-  /** Native: server-side OAuth proxy → openAuthSessionAsync */
+  /** Native: server-side OAuth proxy → openAuthSessionAsync
+   *
+   * We use an HTTPS redirect URL on the API server (not an exp:// custom
+   * scheme) because Chrome Custom Tabs reliably follows HTTPS 302 redirects
+   * and returns the URL to openAuthSessionAsync, whereas custom schemes are
+   * blocked or cause errors in modern Chrome on Android.
+   */
   const signInWithGoogleNative = async () => {
-    const appRedirectUri = Linking.createURL("auth/google-callback");
+    // HTTPS redirect URL — Chrome Custom Tabs handles this reliably
+    const appRedirectUri = `${API_ORIGIN}/api/auth/google/done`;
     const startUrl =
       `${API_ORIGIN}/api/auth/google/start` +
       `?app_redirect_uri=${encodeURIComponent(appRedirectUri)}`;
@@ -113,8 +120,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const result = await WebBrowser.openAuthSessionAsync(startUrl, appRedirectUri);
 
+    googlePendingRef.current = false;
+
     if (result.type === "success") {
-      googlePendingRef.current = false;
       const idToken = extractIdToken(result.url);
       if (idToken) {
         await firebaseSignInWithToken(idToken);
@@ -126,17 +134,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // "cancel" or "dismiss" — might still succeed via the Linking listener above
-    // (Chrome may have dispatched an intent before closing the tab).
-    // Wait briefly to see if the Linking listener fires.
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    if (googlePendingRef.current) {
-      // Linking listener didn't fire either — user genuinely cancelled
-      googlePendingRef.current = false;
-      if (result.type === "cancel" || result.type === "dismiss") {
-        setError("Sign-in was cancelled.");
-      }
+    if (result.type === "cancel" || result.type === "dismiss") {
+      setError("Sign-in was cancelled.");
     }
   };
 

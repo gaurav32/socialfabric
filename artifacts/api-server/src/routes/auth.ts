@@ -105,4 +105,29 @@ router.get("/auth/google/callback", async (req, res) => {
   }
 });
 
+/**
+ * GET /api/auth/google/done?id_token=<token>
+ *
+ * Landing page after the OAuth round-trip.  openAuthSessionAsync on Android
+ * detects that Chrome has navigated to this HTTPS URL (which matches the
+ * redirectUrl passed to it) and returns { type: "success", url } — the
+ * Chrome Custom Tab closes and the app extracts the token from the URL.
+ * This page is only briefly visible (if at all).
+ */
+router.get("/auth/google/done", (req, res) => {
+  res.send(`<!DOCTYPE html>
+<html>
+<head><title>Returning to app…</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body { font-family: system-ui, sans-serif; display:flex; flex-direction:column;
+         align-items:center; justify-content:center; min-height:100vh; margin:0;
+         background:#F0F2FF; color:#1a1a2e; }
+  h2 { color:#5B4FE8; }
+</style>
+</head>
+<body><h2>✓ Signed in</h2><p>Returning to Social Fabric…</p></body>
+</html>`);
+});
+
 export default router;
