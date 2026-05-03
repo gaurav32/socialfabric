@@ -21,6 +21,7 @@ interface AuthContextType {
   signInWithPhone: () => Promise<void>;
   logout: () => Promise<void>;
   error: string | null;
+  googleRedirectUri: string;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -30,6 +31,7 @@ const AuthContext = createContext<AuthContextType>({
   signInWithPhone: async () => {},
   logout: async () => {},
   error: null,
+  googleRedirectUri: "",
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -40,23 +42,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
     webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    responseType: "id_token",
+    usePKCE: false,
   });
 
-  // Handle Google OAuth response
   useEffect(() => {
     if (response?.type === "success") {
       const { id_token } = response.params;
+      if (!id_token) {
+        setError("Google did not return an ID token.");
+        return;
+      }
       const credential = GoogleAuthProvider.credential(id_token);
       signInWithCredential(auth, credential).catch((e: unknown) => {
-        const msg = e instanceof Error ? e.message : "Google sign-in failed";
-        setError(msg);
+        setError(e instanceof Error ? e.message : "Firebase credential failed");
       });
     } else if (response?.type === "error") {
-      setError("Google sign-in was cancelled or failed.");
+      setError(response.error?.message ?? "Google sign-in failed.");
+    } else if (response?.type === "cancel") {
+      setError("Sign-in was cancelled.");
     }
   }, [response]);
 
-  // Listen to Firebase auth state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
@@ -73,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const promptGoogleSignIn = async () => {
     setError(null);
     if (!request) {
-      setError("Google Sign-In is not ready yet. Please try again.");
+      setError("Google Sign-In is not ready. Please wait a moment and try again.");
       return;
     }
     await promptAsync();
@@ -88,14 +95,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await signOut(auth);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Sign out failed";
-      setError(msg);
+      setError(e instanceof Error ? e.message : "Sign out failed");
     }
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, promptGoogleSignIn, signInWithPhone, logout, error }}
+      value={{
+        user,
+        loading,
+        promptGoogleSignIn,
+        signInWithPhone,
+        logout,
+        error,
+        googleRedirectUri: request?.redirectUri ?? "",
+      }}
     >
       {children}
     </AuthContext.Provider>

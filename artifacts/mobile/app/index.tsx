@@ -28,7 +28,7 @@ const STATS = [
 export default function PreLoginScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { user, loading, promptGoogleSignIn, signInWithPhone, error } = useAuth();
+  const { user, loading, promptGoogleSignIn, signInWithPhone, error, googleRedirectUri } = useAuth();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
@@ -168,6 +168,17 @@ export default function PreLoginScreen() {
             </View>
           )}
 
+          {/* Dev: show redirect URI for Google OAuth setup */}
+          {__DEV__ && !!googleRedirectUri && (
+            <View style={[styles.devBox, { backgroundColor: colors.secondary, borderRadius: colors.radius / 2 }]}>
+              <Text style={[styles.devLabel, { color: colors.primary }]}>Dev: Google OAuth Redirect URI</Text>
+              <Text style={[styles.devUri, { color: colors.foreground }]} selectable>{googleRedirectUri}</Text>
+              <Text style={[styles.devHint, { color: colors.mutedForeground }]}>
+                Add this URI to Google Cloud Console → OAuth Credentials → Authorized redirect URIs
+              </Text>
+            </View>
+          )}
+
           {/* Terms */}
           <Text style={[styles.terms, { color: colors.mutedForeground }]}>
             By continuing you agree to our{" "}
@@ -299,5 +310,27 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     textAlign: "center",
     lineHeight: 17,
+  },
+  devBox: {
+    marginTop: 16,
+    padding: 12,
+    width: "100%",
+    gap: 4,
+  },
+  devLabel: {
+    fontSize: 11,
+    fontFamily: "Inter_700Bold",
+    marginBottom: 4,
+  },
+  devUri: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 16,
+  },
+  devHint: {
+    fontSize: 10,
+    fontFamily: "Inter_400Regular",
+    marginTop: 4,
+    lineHeight: 15,
   },
 });
