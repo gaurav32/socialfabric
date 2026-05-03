@@ -28,7 +28,7 @@ const STATS = [
 export default function PreLoginScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { user, loading, promptGoogleSignIn, signInWithPhone, error, googleRedirectUri } = useAuth();
+  const { user, loading, promptGoogleSignIn, signInWithPhone, error } = useAuth();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
@@ -165,17 +165,6 @@ export default function PreLoginScreen() {
           {!!error && (
             <View style={[styles.errorBox, { backgroundColor: colors.destructive + "22", borderRadius: colors.radius / 2 }]}>
               <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
-            </View>
-          )}
-
-          {/* Dev: show redirect URI for Google OAuth setup */}
-          {__DEV__ && !!googleRedirectUri && (
-            <View style={[styles.devBox, { backgroundColor: colors.secondary, borderRadius: colors.radius / 2 }]}>
-              <Text style={[styles.devLabel, { color: colors.primary }]}>Dev: Google OAuth Redirect URI</Text>
-              <Text style={[styles.devUri, { color: colors.foreground }]} selectable>{googleRedirectUri}</Text>
-              <Text style={[styles.devHint, { color: colors.mutedForeground }]}>
-                Add this URI to Google Cloud Console → OAuth Credentials → Authorized redirect URIs
-              </Text>
             </View>
           )}
 

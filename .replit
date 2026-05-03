@@ -42,3 +42,8 @@ externalPort = 3001
 [[ports]]
 localPort = 18116
 externalPort = 4200
+
+[userenv]
+
+[userenv.shared]
+EXPO_PUBLIC_API_URL = "https://a5fcae06-0b34-4951-9dfd-cef9d6f6c0c3-00-l4iig0njt0xp.pike.replit.dev"
