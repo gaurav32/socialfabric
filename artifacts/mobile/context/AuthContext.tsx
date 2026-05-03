@@ -4,11 +4,13 @@ import {
   User,
   onAuthStateChanged,
   signInWithCredential,
+  signInWithPopup,
   signOut,
 } from "firebase/auth";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { Platform } from "react-native";
 
 import { auth } from "@/lib/firebase";
 
@@ -54,49 +56,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return unsubscribe;
   }, []);
 
+  /** Web: Firebase signInWithPopup (works natively in browsers) */
+  const signInWithGoogleWeb = async () => {
+    const provider = new GoogleAuthProvider();
+    provider.addScope("email");
+    provider.addScope("profile");
+    await signInWithPopup(auth, provider);
+  };
+
+  /** Native (Android/iOS): server-side OAuth proxy via openAuthSessionAsync */
+  const signInWithGoogleNative = async () => {
+    const appRedirectUri = Linking.createURL("auth/google-callback");
+    const startUrl =
+      `${API_ORIGIN}/api/auth/google/start` +
+      `?app_redirect_uri=${encodeURIComponent(appRedirectUri)}`;
+
+    const result = await WebBrowser.openAuthSessionAsync(startUrl, appRedirectUri);
+
+    if (result.type === "cancel" || result.type === "dismiss") {
+      setError("Sign-in was cancelled.");
+      return;
+    }
+
+    if (result.type === "success") {
+      const parsed = Linking.parse(result.url);
+      const idToken = parsed.queryParams?.["id_token"];
+      const oauthError = parsed.queryParams?.["error"];
+
+      if (oauthError) {
+        setError(String(oauthError));
+        return;
+      }
+      if (idToken && typeof idToken === "string") {
+        const credential = GoogleAuthProvider.credential(idToken);
+        await signInWithCredential(auth, credential);
+      } else {
+        setError("No token received — please try again.");
+      }
+    }
+  };
+
   const promptGoogleSignIn = async () => {
     setError(null);
     try {
-      // Linking.createURL generates the correct scheme for the current runtime:
-      // - Expo Go:  exp://EXPO_DEV_DOMAIN/--/auth/google-callback
-      // - Standalone: mobile://auth/google-callback
-      // We pass this to the server as `app_redirect_uri` so the server bounces
-      // back to exactly this URL. We also pass it as the second arg to
-      // openAuthSessionAsync so the in-app browser knows when to close.
-      const appRedirectUri = Linking.createURL("auth/google-callback");
-
-      const startUrl =
-        `${API_ORIGIN}/api/auth/google/start` +
-        `?app_redirect_uri=${encodeURIComponent(appRedirectUri)}`;
-
-      const result = await WebBrowser.openAuthSessionAsync(
-        startUrl,
-        appRedirectUri,
-      );
-
-      if (result.type === "cancel" || result.type === "dismiss") {
-        setError("Sign-in was cancelled.");
-        return;
-      }
-
-      if (result.type === "success") {
-        const parsed = Linking.parse(result.url);
-        const idToken = parsed.queryParams?.["id_token"];
-        const oauthError = parsed.queryParams?.["error"];
-
-        if (oauthError) {
-          setError(String(oauthError));
-          return;
-        }
-        if (idToken && typeof idToken === "string") {
-          const credential = GoogleAuthProvider.credential(idToken);
-          await signInWithCredential(auth, credential);
-        } else {
-          setError("Google sign-in did not return a token. Please try again.");
-        }
+      if (Platform.OS === "web") {
+        await signInWithGoogleWeb();
+      } else {
+        await signInWithGoogleNative();
       }
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Google sign-in failed");
+      const msg = e instanceof Error ? e.message : "Google sign-in failed";
+      // Ignore user-closed popup
+      if (msg.includes("popup-closed-by-user") || msg.includes("cancelled")) return;
+      setError(msg);
     }
   };
 
