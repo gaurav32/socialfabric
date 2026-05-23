@@ -68,6 +68,7 @@ const MOCK_CAMPAIGNS: Campaign[] = [
     completionPct: 0,
     endDate: "Sep 30, 2025",
     isNew: true,
+    isRecommended: true,
     communityCount: 54,
     upiCode: "FABRIC-DWK21",
   },
@@ -90,6 +91,7 @@ const MOCK_CAMPAIGNS: Campaign[] = [
     status: "in_progress",
     completionPct: 45,
     endDate: "Jul 3, 2025",
+    isRecommended: true,
     communityCount: 128,
     upiCode: "FABRIC-AND01",
   },
@@ -259,11 +261,19 @@ function CampaignCard({ item, onPress }: { item: Campaign; onPress: () => void }
             <Text style={[styles.campaignTitle, { color: colors.text, flex: 1 }]} numberOfLines={2}>
               {item.title}
             </Text>
-            {isJoined && (
+            {isJoined ? (
               <View style={styles.joinedBadge}>
                 <View style={styles.joinedDot} />
                 <Text style={styles.joinedBadgeText}>Joined</Text>
               </View>
+            ) : (
+              <Pressable
+                onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+                hitSlop={8}
+                style={styles.bookmarkBtn}
+              >
+                <Ionicons name="bookmark-outline" size={19} color={colors.mutedForeground} />
+              </Pressable>
             )}
           </View>
           <View style={[styles.statusBadge, { backgroundColor: statusBg }]}>
@@ -328,11 +338,17 @@ export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState<HomeTab>("askforhelp");
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
-  const [campaignFilter, setCampaignFilter] = useState<"all" | "joined">("all");
+  const [campaignFilter, setCampaignFilter] = useState<"all" | "new" | "recommended" | "joined">("all");
 
+  const newCount = MOCK_CAMPAIGNS.filter((c) => c.isNew).length;
+  const recommendedCount = MOCK_CAMPAIGNS.filter((c) => c.isRecommended).length;
   const joinedCount = MOCK_CAMPAIGNS.filter((c) => c.status === "joined").length;
   const filteredCampaigns =
-    campaignFilter === "joined"
+    campaignFilter === "new"
+      ? MOCK_CAMPAIGNS.filter((c) => c.isNew)
+      : campaignFilter === "recommended"
+      ? MOCK_CAMPAIGNS.filter((c) => c.isRecommended)
+      : campaignFilter === "joined"
       ? MOCK_CAMPAIGNS.filter((c) => c.status === "joined")
       : MOCK_CAMPAIGNS;
 
@@ -438,50 +454,47 @@ export default function HomeScreen() {
         {activeTab === "campaigns" && (
           <View style={styles.tabContent}>
             <View style={styles.campaignHeader}>
-              <View style={styles.filterChips}>
-                <Pressable
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setCampaignFilter(campaignFilter === "joined" ? "all" : "joined");
-                  }}
-                  style={[
-                    styles.filterChip,
-                    campaignFilter === "joined"
-                      ? { backgroundColor: colors.primary }
-                      : { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.filterChipText,
-                      { color: campaignFilter === "joined" ? "#fff" : colors.mutedForeground },
-                    ]}
-                  >
-                    {joinedCount} joined
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setCampaignFilter(campaignFilter === "all" ? "joined" : "all");
-                  }}
-                  style={[
-                    styles.filterChip,
-                    campaignFilter === "all"
-                      ? { backgroundColor: colors.primary }
-                      : { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.filterChipText,
-                      { color: campaignFilter === "all" ? "#fff" : colors.mutedForeground },
-                    ]}
-                  >
-                    {MOCK_CAMPAIGNS.length + 1} total
-                  </Text>
-                </Pressable>
-              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.filterChipsScroll}
+                contentContainerStyle={styles.filterChips}
+              >
+                {(
+                  [
+                    { key: "new", label: `${newCount} new` },
+                    { key: "recommended", label: `${recommendedCount} recommended` },
+                    { key: "joined", label: `${joinedCount} joined` },
+                    { key: "all", label: `${MOCK_CAMPAIGNS.length + 1} total` },
+                  ] as const
+                ).map((chip) => {
+                  const isActive = campaignFilter === chip.key;
+                  return (
+                    <Pressable
+                      key={chip.key}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setCampaignFilter(isActive && chip.key !== "all" ? "all" : chip.key);
+                      }}
+                      style={[
+                        styles.filterChip,
+                        isActive
+                          ? { backgroundColor: colors.primary }
+                          : { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.filterChipText,
+                          { color: isActive ? "#fff" : colors.mutedForeground },
+                        ]}
+                      >
+                        {chip.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
               <Pressable
                 style={[styles.createBtn, { backgroundColor: colors.primary }]}
                 onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}
@@ -618,9 +631,10 @@ const styles = StyleSheet.create({
   repliesText: { fontSize: 13, fontWeight: "600" },
 
   // Campaign section header
-  campaignHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  campaignHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
   campaignMeta: { fontSize: 13, fontWeight: "600" },
-  filterChips: { flexDirection: "row", gap: 6 },
+  filterChipsScroll: { flex: 1 },
+  filterChips: { flexDirection: "row", gap: 6, alignItems: "center" },
   filterChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
   filterChipText: { fontSize: 12, fontWeight: "600" },
   createBtn: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10 },
@@ -638,6 +652,7 @@ const styles = StyleSheet.create({
   joinedBadge: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#DCFCE7", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   joinedDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#22C55E" },
   joinedBadgeText: { fontSize: 12, fontWeight: "600", color: "#16A34A" },
+  bookmarkBtn: { padding: 2 },
 
   // Completion in card
   completionSection: { gap: 6 },

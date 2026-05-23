@@ -30,6 +30,7 @@ export interface Campaign {
   completionPct: number;
   endDate: string;
   isNew?: boolean;
+  isRecommended?: boolean;
   communityCount: number;
   upiCode: string;
 }
