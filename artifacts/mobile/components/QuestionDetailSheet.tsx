@@ -366,11 +366,12 @@ export default function QuestionDetailSheet({ question, onClose }: Props) {
           <View style={styles.sectionRow}>
             <Text style={[styles.sectionLabel, { color: colors.text }]}>SERVICE STATUS</Text>
             <Pressable
-              style={[styles.milestonesBtn, { borderColor: colors.border }]}
+              style={styles.milestonesBtn}
               onPress={() => { setShowBids((b) => !b); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
             >
-              <Text style={[styles.milestonesBtnText, { color: colors.text }]}>Milestones</Text>
-              <Ionicons name={showBids ? "chevron-up" : "chevron-down"} size={13} color={colors.mutedForeground} />
+              <Text style={[styles.milestonesBtnText, { color: colors.primary }]}>
+                Milestones {showBids ? "∧" : ">"}
+              </Text>
             </Pressable>
           </View>
 
@@ -502,15 +503,9 @@ const styles = StyleSheet.create({
   sectionRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   sectionLabel: { fontSize: 11, fontWeight: "700", letterSpacing: 0.8 },
   milestonesBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1,
+    paddingVertical: 2,
   },
-  milestonesBtnText: { fontSize: 12, fontWeight: "500" },
+  milestonesBtnText: { fontSize: 13, fontWeight: "700" },
 
   progressTrack: { height: 5, borderRadius: 3, overflow: "hidden" },
   progressFill: { height: 5, borderRadius: 3 },
