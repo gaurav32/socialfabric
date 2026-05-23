@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
 import {
   FlatList,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -376,7 +377,13 @@ export default function TasksScreen() {
   const handleReject = (id: string) =>
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status: "failed" as TaskStatus } : t)));
 
-  const handleWhatsApp = (_id: string) => {};
+  const handleWhatsApp = (_id: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const url = Platform.OS === "web" ? "https://web.whatsapp.com" : "whatsapp://";
+    Linking.canOpenURL(url).then((supported) => {
+      Linking.openURL(supported ? url : "https://web.whatsapp.com");
+    });
+  };
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
