@@ -4,7 +4,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-  FlatList,
   Platform,
   Pressable,
   ScrollView,
@@ -16,20 +15,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
+import QuestionDetailSheet from "@/components/QuestionDetailSheet";
+import type { Question } from "@/components/QuestionDetailSheet";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type HomeTab = "campaigns" | "askforhelp";
-
-interface Question {
-  id: string;
-  category: string;
-  icon: string;
-  timeAgo: string;
-  text: string;
-  location: string;
-  replies: number;
-}
 
 interface Campaign {
   id: string;
@@ -184,10 +175,19 @@ function LiveMapSection() {
   );
 }
 
-function QuestionCard({ item }: { item: Question }) {
+function QuestionCard({ item, onPress }: { item: Question; onPress: () => void }) {
   const colors = useColors();
   return (
-    <View style={[styles.questionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <Pressable
+      style={({ pressed }) => [
+        styles.questionCard,
+        { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
+      ]}
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        onPress();
+      }}
+    >
       {/* Top row */}
       <View style={styles.questionTop}>
         <GradientIcon name={item.icon} size={34} iconSize={15} />
@@ -208,7 +208,7 @@ function QuestionCard({ item }: { item: Question }) {
         </View>
         <Text style={[styles.repliesText, { color: colors.primary }]}>{item.replies} replies</Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -247,6 +247,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<HomeTab>("askforhelp");
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
 
   const displayName = user?.displayName ?? user?.email?.split("@")[0] ?? "Changemaker";
 
@@ -343,7 +344,7 @@ export default function HomeScreen() {
 
             {/* Question cards */}
             {MOCK_QUESTIONS.map((q) => (
-              <QuestionCard key={q.id} item={q} />
+              <QuestionCard key={q.id} item={q} onPress={() => setSelectedQuestion(q)} />
             ))}
           </View>
         )}
@@ -370,6 +371,12 @@ export default function HomeScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Bottom-sheet overlay */}
+      <QuestionDetailSheet
+        question={selectedQuestion}
+        onClose={() => setSelectedQuestion(null)}
+      />
     </View>
   );
 }
