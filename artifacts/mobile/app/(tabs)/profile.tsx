@@ -124,7 +124,7 @@ export default function ProfileScreen() {
   const displayName = user?.displayName ?? "Dev User";
   const email = user?.email ?? "dev@socialfabric.app";
 
-  const avatarSize = hp(0.142);
+  const avatarSize = hp(0.114);
   const iconCircleSize = hp(0.1);
 
   const handleCopy = async () => {
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 24, fontWeight: "700" },
 
   // User card
-  userCard: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
+  userCard: { flexDirection: "row", alignItems: "center", gap: 12, padding: 11 },
   avatar: { alignItems: "center", justifyContent: "center" },
   avatarText: { fontWeight: "700" },
   userInfo: { flex: 1 },
