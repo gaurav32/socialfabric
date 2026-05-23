@@ -6,7 +6,7 @@ import {
   useFonts,
 } from "@expo-google-fonts/inter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { router, Stack, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -14,20 +14,50 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { AuthProvider } from "@/context/AuthContext";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 
+/**
+ * Global auth gate — mounted inside AuthProvider so it always runs,
+ * regardless of the current screen. When user becomes non-null (auth
+ * succeeds from any path — popup, deep link, or cold start), we
+ * immediately navigate to the home tab.
+ */
+function AuthGate() {
+  const { user, loading } = useAuth();
+  const segments = useSegments();
+
+  useEffect(() => {
+    if (loading) return;
+
+    const inAuthGroup = segments[0] === "(tabs)";
+
+    if (user && !inAuthGroup) {
+      // Authenticated but not on home yet — go there now
+      router.replace("/(tabs)/home");
+    } else if (!user && inAuthGroup) {
+      // Logged out while inside tabs — back to login
+      router.replace("/");
+    }
+  }, [user, loading, segments]);
+
+  return null;
+}
+
 function RootLayoutNav() {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
-      <Stack.Screen name="auth/email" />
-      <Stack.Screen name="auth/google-callback" />
-      <Stack.Screen name="(tabs)" />
-    </Stack>
+    <>
+      <AuthGate />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="auth/email" />
+        <Stack.Screen name="auth/google-callback" />
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+    </>
   );
 }
 
