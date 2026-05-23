@@ -34,7 +34,7 @@ function Avatar({ name, size = 52 }: { name: string; size?: number }) {
       colors={["#7C6FF5", "#5B4FE8"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      style={[styles.avatar, { width: size, height: size, borderRadius: size * 0.22 }]}
+      style={[styles.avatar, { width: size, height: size, borderRadius: size / 2 }]}
     >
       <Text style={[styles.avatarText, { color: "#fff", fontSize: size * 0.36 }]}>
         {initials}
@@ -159,7 +159,7 @@ export default function ProfileScreen() {
       style={[styles.root, Platform.OS === "web" && { overflow: "scroll" as "scroll" }]}
       contentContainerStyle={[
         styles.content,
-        { paddingTop: insets.top + 44, paddingBottom: insets.bottom + 24 },
+        { paddingTop: insets.top + (Platform.OS === "web" ? 67 : 0) + 12, paddingBottom: insets.bottom + 24 },
       ]}
       showsVerticalScrollIndicator={false}
     >
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 24, fontWeight: "700" },
 
   // User card
-  userCard: { flexDirection: "row", alignItems: "center", gap: 12 },
+  userCard: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
   avatar: { alignItems: "center", justifyContent: "center" },
   avatarText: { fontWeight: "700" },
   userInfo: { flex: 1 },
