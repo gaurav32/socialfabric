@@ -310,7 +310,7 @@ export default function ProfileScreen() {
               }}
               style={[styles.shareIcon, { backgroundColor: "#fff" }]}
             >
-              <Ionicons name={s.icon as never} size={18} color={s.color} />
+              <Ionicons name={s.icon as never} size={14} color={s.color} />
             </Pressable>
           ))}
         </View>
@@ -483,16 +483,15 @@ const styles = StyleSheet.create({
 
   shareRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     gap: 8,
   },
   shareIcon: {
-    flex: 1,
-    aspectRatio: 1,
-    borderRadius: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 10,
   },
 
   followIconsRow: {
