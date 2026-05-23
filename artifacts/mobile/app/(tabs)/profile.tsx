@@ -17,27 +17,31 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
+import { fetchWithCache } from "@/hooks/useApiCache";
+import { getProfile } from "@workspace/api-client-react";
 
-const REFERRAL_CODE = "FABRIC-ADI2025";
-const REFERRAL_LINK = `https://socialfabric.app/join?ref=${REFERRAL_CODE}`;
+const FALLBACK_REFERRAL_CODE = "FABRIC-ADI2025";
 
-const SOCIAL_SHARES = [
-  { key: "instagram", icon: "logo-instagram", color: "#E1306C", url: () => "https://www.instagram.com/" },
-  { key: "twitter",   icon: "logo-twitter",   color: "#1DA1F2", url: () => {
-    const msg = encodeURIComponent(`Join me on Social Fabric! ${REFERRAL_LINK}`);
-    return `https://twitter.com/intent/tweet?text=${msg}`;
-  }},
-  { key: "facebook",  icon: "logo-facebook",  color: "#1877F2", url: () =>
-    `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(REFERRAL_LINK)}`
-  },
-  { key: "youtube",   icon: "logo-youtube",   color: "#FF0000", url: () => "https://www.youtube.com/@socialfabric" },
-  { key: "snapchat",  icon: "logo-snapchat",  color: "#FFFC00", url: () =>
-    `https://www.snapchat.com/scan?attachmentUrl=${encodeURIComponent(REFERRAL_LINK)}`
-  },
-] as const;
+function getSocialShares(referralLink: string) {
+  return [
+    { key: "instagram", icon: "logo-instagram", color: "#E1306C", url: () => "https://www.instagram.com/" },
+    { key: "twitter",   icon: "logo-twitter",   color: "#1DA1F2", url: () => {
+      const msg = encodeURIComponent(`Join me on Social Fabric! ${referralLink}`);
+      return `https://twitter.com/intent/tweet?text=${msg}`;
+    }},
+    { key: "facebook",  icon: "logo-facebook",  color: "#1877F2", url: () =>
+      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralLink)}`
+    },
+    { key: "youtube",   icon: "logo-youtube",   color: "#FF0000", url: () => "https://www.youtube.com/@socialfabric" },
+    { key: "snapchat",  icon: "logo-snapchat",  color: "#FFFC00", url: () =>
+      `https://www.snapchat.com/scan?attachmentUrl=${encodeURIComponent(referralLink)}`
+    },
+  ] as const;
+}
 
 
 function Avatar({ name, size = 52 }: { name: string; size?: number }) {
@@ -139,14 +143,29 @@ export default function ProfileScreen() {
 
   const hp = (pct: number) => width * pct;
 
-  const displayName = user?.displayName ?? "Dev User";
-  const email = user?.email ?? "dev@socialfabric.app";
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => fetchWithCache("profile", getProfile),
+  });
+
+  const displayName = profile?.displayName || user?.displayName || "Dev User";
+  const email = profile?.email || user?.email || "dev@socialfabric.app";
+  const referralCode = profile?.referralCode ?? FALLBACK_REFERRAL_CODE;
+  const referralLink = `https://socialfabric.app/join?ref=${referralCode}`;
+  const socialScore = profile?.socialScore ?? 720;
+  const coins = profile?.coins ?? 200;
+  const kycStatus = profile?.kycStatus ?? "pending";
+  const invitedCount = profile?.invitedCount ?? 12;
+  const joinedCount = profile?.joinedCount ?? 3;
+  const ptsEarned = profile?.ptsEarned ?? 45;
+
+  const socialShares = getSocialShares(referralLink);
 
   const avatarSize = hp(0.114);
   const iconCircleSize = hp(0.1);
 
   const handleCopy = async () => {
-    await Clipboard.setStringAsync(REFERRAL_CODE);
+    await Clipboard.setStringAsync(referralCode);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -224,8 +243,10 @@ export default function ProfileScreen() {
             </View>
             <Text style={styles.scoreLabel}>Social Score</Text>
           </View>
-          <Text style={styles.scoreValue}>720</Text>
-          <Text style={styles.scoreHint}>Complete KYC to unlock higher score</Text>
+          <Text style={styles.scoreValue}>{socialScore}</Text>
+          <Text style={styles.scoreHint}>
+            {kycStatus === "verified" ? "KYC verified ✓" : "Complete KYC to unlock higher score"}
+          </Text>
         </View>
 
         {/* Coins */}
@@ -234,8 +255,8 @@ export default function ProfileScreen() {
             <Text style={styles.coinEmoji}>🪙</Text>
             <Text style={[styles.coinsLabel, { color: colors.mutedForeground }]}>Coins</Text>
           </View>
-          <Text style={[styles.coinsValue, { color: colors.text }]}>200</Text>
-          <Text style={[styles.coinsHint, { color: colors.mutedForeground }]}>From 2 completed tasks</Text>
+          <Text style={[styles.coinsValue, { color: colors.text }]}>{coins}</Text>
+          <Text style={[styles.coinsHint, { color: colors.mutedForeground }]}>From completed tasks</Text>
         </View>
       </View>
 
@@ -245,11 +266,17 @@ export default function ProfileScreen() {
         <RowItem
           icon="shield-checkmark-outline"
           label="KYC Verification"
-          subtitle="Identity not verified"
+          subtitle={kycStatus === "verified" ? "Identity verified" : "Identity not verified"}
           showChevron={false}
           right={
-            <View style={[styles.pendingBadge, { backgroundColor: "#FFF4E5" }]}>
-              <Text style={[styles.pendingText, { color: "#F59E0B" }]}>Pending</Text>
+            <View style={[styles.pendingBadge, {
+              backgroundColor: kycStatus === "verified" ? "#E4FFE9" : "#FFF4E5",
+            }]}>
+              <Text style={[styles.pendingText, {
+                color: kycStatus === "verified" ? "#2D8A44" : "#F59E0B",
+              }]}>
+                {kycStatus === "verified" ? "Verified" : "Pending"}
+              </Text>
             </View>
           }
         />
@@ -280,7 +307,7 @@ export default function ProfileScreen() {
             style={styles.actionPill}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              const msg = encodeURIComponent(`Join me on Social Fabric! Use my referral link: ${REFERRAL_LINK}`);
+              const msg = encodeURIComponent(`Join me on Social Fabric! Use my referral link: ${referralLink}`);
               Linking.openURL(Platform.OS === "web" ? `https://web.whatsapp.com/send?text=${msg}` : `https://wa.me/?text=${msg}`);
             }}
           >
@@ -298,7 +325,7 @@ export default function ProfileScreen() {
             </View>
             <View style={styles.miniIconsRow}>
               {(["instagram","twitter","facebook","youtube"] as const).map((k) => {
-                const s = SOCIAL_SHARES.find((x) => x.key === k)!;
+                const s = socialShares.find((x) => x.key === k)!;
                 return (
                   <Pressable key={k} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL(s.url()); }}>
                     <Ionicons name={s.icon as never} size={14} color={s.color} />
@@ -313,9 +340,9 @@ export default function ProfileScreen() {
         {/* Stats */}
         <View style={styles.growStats}>
           {[
-            { value: "12", label: "Invited" },
-            { value: "3", label: "Joined" },
-            { value: "+45", label: "Pts earned" },
+            { value: String(invitedCount), label: "Invited" },
+            { value: String(joinedCount), label: "Joined" },
+            { value: `+${ptsEarned}`, label: "Pts earned" },
           ].map((stat) => (
             <View key={stat.label} style={styles.growStat}>
               <Text style={styles.growStatValue}>{stat.value}</Text>

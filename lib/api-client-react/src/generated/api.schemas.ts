@@ -8,3 +8,37 @@
 export interface HealthStatus {
   status: string;
 }
+
+export interface Profile {
+  userId: string;
+  displayName: string;
+  email: string;
+  referralCode: string;
+  socialScore: number;
+  coins: number;
+  kycStatus: string;
+  invitedCount: number;
+  joinedCount: number;
+  ptsEarned: number;
+}
+
+export interface UpdateProfileBody {
+  displayName?: string;
+  email?: string;
+}
+
+export interface Task {
+  id: string;
+  userId: string;
+  title: string;
+  type: string;
+  status: string;
+  location: string;
+  dueDate: string;
+  coins: number;
+  icon: string;
+}
+
+export interface UpdateTaskBody {
+  status?: string;
+}

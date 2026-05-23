@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FlatList,
   Linking,
@@ -14,9 +14,12 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
+import { fetchWithCache } from "@/hooks/useApiCache";
+import { getTasks, useUpdateTask } from "@workspace/api-client-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -25,6 +28,8 @@ const APP_DEEP_LINK_BASE = "socialfabric://task";
 
 type TaskStatus = "active" | "accepted" | "completed" | "failed";
 type TaskType = "recommendation" | "bid" | "survey";
+
+const DEFAULT_GRADIENT: readonly [string, string] = ["#7C6FF5", "#5B4FE8"];
 
 interface Task {
   id: string;
@@ -37,99 +42,6 @@ interface Task {
   icon: string;
   iconGradient: readonly [string, string];
 }
-
-// ─── Mock data ────────────────────────────────────────────────────────────────
-
-const MOCK_TASKS: Task[] = [
-  {
-    id: "1",
-    title: "Recommend a Barber near Dwarka Sec 21",
-    type: "recommendation",
-    status: "active",
-    location: "Dwarka Sec 21, New Delhi",
-    dueDate: "Jun 10, 2025",
-    coins: 80,
-    icon: "cut-outline",
-    iconGradient: ["#7C6FF5", "#5B4FE8"],
-  },
-  {
-    id: "2",
-    title: "Submit Bid — Cycle Service Booking",
-    type: "bid",
-    status: "active",
-    location: "Dwarka Sec 21, New Delhi",
-    dueDate: "Jun 15, 2025",
-    coins: 120,
-    icon: "bicycle-outline",
-    iconGradient: ["#7C6FF5", "#5B4FE8"],
-  },
-  {
-    id: "3",
-    title: "Recommend a Bike Mechanic — Royal Enfield",
-    type: "recommendation",
-    status: "active",
-    location: "Dwarka, New Delhi",
-    dueDate: "Jun 12, 2025",
-    coins: 95,
-    icon: "construct-outline",
-    iconGradient: ["#7C6FF5", "#5B4FE8"],
-  },
-  {
-    id: "4",
-    title: "Find a Plumber in Rohini",
-    type: "recommendation",
-    status: "accepted",
-    location: "Rohini, New Delhi",
-    dueDate: "Jun 8, 2025",
-    coins: 60,
-    icon: "hammer-outline",
-    iconGradient: ["#7C6FF5", "#5B4FE8"],
-  },
-  {
-    id: "5",
-    title: "Submit Bid — AC Repair",
-    type: "bid",
-    status: "accepted",
-    location: "Janakpuri, New Delhi",
-    dueDate: "Jun 9, 2025",
-    coins: 150,
-    icon: "snow-outline",
-    iconGradient: ["#7C6FF5", "#5B4FE8"],
-  },
-  {
-    id: "6",
-    title: "Recommend a Dentist near Sector 10",
-    type: "recommendation",
-    status: "completed",
-    location: "Dwarka Sec 10, New Delhi",
-    dueDate: "May 30, 2025",
-    coins: 70,
-    icon: "medkit-outline",
-    iconGradient: ["#7C6FF5", "#5B4FE8"],
-  },
-  {
-    id: "7",
-    title: "Community Survey — Local Markets",
-    type: "survey",
-    status: "completed",
-    location: "Dwarka, New Delhi",
-    dueDate: "May 28, 2025",
-    coins: 40,
-    icon: "document-text-outline",
-    iconGradient: ["#7C6FF5", "#5B4FE8"],
-  },
-  {
-    id: "8",
-    title: "Find Yoga Instructor in Palam",
-    type: "recommendation",
-    status: "failed",
-    location: "Palam, New Delhi",
-    dueDate: "May 25, 2025",
-    coins: 55,
-    icon: "body-outline",
-    iconGradient: ["#7C6FF5", "#5B4FE8"],
-  },
-];
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -210,7 +122,7 @@ function TaskCard({
   const [bidAmount, setBidAmount] = useState("");
   const [bookmarked, setBookmarked] = useState(false);
 
-  const catColor = CATEGORY_COLORS[task.type];
+  const catColor = CATEGORY_COLORS[task.type] ?? CATEGORY_COLORS.recommendation;
   const isActive = task.status === "active";
   const isAccepted = task.status === "accepted";
   const isCompleted = task.status === "completed";
@@ -236,7 +148,7 @@ function TaskCard({
           </Text>
           <View style={[styles.categoryBadge, { backgroundColor: catColor.bg }]}>
             <Text style={[styles.categoryText, { color: catColor.text }]}>
-              {CATEGORY_LABELS[task.type]}
+              {CATEGORY_LABELS[task.type] ?? task.type}
             </Text>
           </View>
         </View>
@@ -364,7 +276,32 @@ export default function TasksScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TaskStatus>("active");
-  const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS);
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  const { mutate: patchTask } = useUpdateTask();
+
+  const { data: apiTasks } = useQuery({
+    queryKey: ["tasks"],
+    queryFn: () => fetchWithCache("tasks", getTasks),
+  });
+
+  useEffect(() => {
+    if (apiTasks) {
+      setTasks(
+        apiTasks.map((t) => ({
+          id: t.id,
+          title: t.title,
+          type: (t.type as TaskType) ?? "recommendation",
+          status: (t.status as TaskStatus) ?? "active",
+          location: t.location,
+          dueDate: t.dueDate,
+          coins: t.coins,
+          icon: t.icon,
+          iconGradient: DEFAULT_GRADIENT,
+        })),
+      );
+    }
+  }, [apiTasks]);
 
   const displayName = user?.displayName ?? "Dev User";
 
@@ -374,11 +311,15 @@ export default function TasksScreen() {
   const countByStatus = (s: TaskStatus) => tasks.filter((t) => t.status === s).length;
   const filtered = tasks.filter((t) => t.status === activeTab);
 
-  const handleAccept = (id: string) =>
+  const handleAccept = (id: string) => {
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status: "accepted" as TaskStatus } : t)));
+    patchTask({ id, data: { status: "accepted" } });
+  };
 
-  const handleReject = (id: string) =>
+  const handleReject = (id: string) => {
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status: "failed" as TaskStatus } : t)));
+    patchTask({ id, data: { status: "failed" } });
+  };
 
   const handleWhatsApp = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

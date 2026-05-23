@@ -7,3 +7,7 @@
  */
 
 export * from "./healthStatus";
+export * from "./profile";
+export * from "./task";
+export * from "./updateProfileBody";
+export * from "./updateTaskBody";

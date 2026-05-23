@@ -10,6 +10,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: profile
+    description: User profile operations
+  - name: tasks
+    description: User task operations
 paths:
   /healthz:
     get:
@@ -24,6 +28,87 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /profile:
+    get:
+      operationId: getProfile
+      tags: [profile]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "401":
+          description: Unauthorized
+    put:
+      operationId: updateProfile
+      tags: [profile]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileBody"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "401":
+          description: Unauthorized
+
+  /tasks:
+    get:
+      operationId: getTasks
+      tags: [tasks]
+      summary: Get tasks for current user
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+        "401":
+          description: Unauthorized
+
+  /tasks/{id}:
+    patch:
+      operationId: updateTask
+      tags: [tasks]
+      summary: Update a task status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTaskBody"
+      responses:
+        "200":
+          description: Updated task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Task not found
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +119,83 @@ components:
       required:
         - status
 
+    Profile:
+      type: object
+      required:
+        - userId
+        - displayName
+        - email
+        - referralCode
+        - socialScore
+        - coins
+        - kycStatus
+        - invitedCount
+        - joinedCount
+        - ptsEarned
+      properties:
+        userId:
+          type: string
+        displayName:
+          type: string
+        email:
+          type: string
+        referralCode:
+          type: string
+        socialScore:
+          type: integer
+        coins:
+          type: integer
+        kycStatus:
+          type: string
+        invitedCount:
+          type: integer
+        joinedCount:
+          type: integer
+        ptsEarned:
+          type: integer
+
+    UpdateProfileBody:
+      type: object
+      properties:
+        displayName:
+          type: string
+        email:
+          type: string
+
+    Task:
+      type: object
+      required:
+        - id
+        - userId
+        - title
+        - type
+        - status
+        - location
+        - dueDate
+        - coins
+        - icon
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+        location:
+          type: string
+        dueDate:
+          type: string
+        coins:
+          type: integer
+        icon:
+          type: string
+
+    UpdateTaskBody:
+      type: object
+      properties:
+        status:
+          type: string

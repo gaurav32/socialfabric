@@ -15,6 +15,13 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { setBaseUrl } from "@workspace/api-client-react";
+
+// Point the API client at the shared reverse-proxy domain in Expo (native/web).
+const domain = process.env.EXPO_PUBLIC_DOMAIN;
+if (domain) {
+  setBaseUrl(`https://${domain}`);
+}
 
 SplashScreen.preventAutoHideAsync();
 

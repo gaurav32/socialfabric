@@ -14,3 +14,79 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * @summary Get current user profile
+ */
+export const GetProfileResponse = zod.object({
+  userId: zod.string(),
+  displayName: zod.string(),
+  email: zod.string(),
+  referralCode: zod.string(),
+  socialScore: zod.number(),
+  coins: zod.number(),
+  kycStatus: zod.string(),
+  invitedCount: zod.number(),
+  joinedCount: zod.number(),
+  ptsEarned: zod.number(),
+});
+
+/**
+ * @summary Update current user profile
+ */
+export const UpdateProfileBody = zod.object({
+  displayName: zod.string().optional(),
+  email: zod.string().optional(),
+});
+
+export const UpdateProfileResponse = zod.object({
+  userId: zod.string(),
+  displayName: zod.string(),
+  email: zod.string(),
+  referralCode: zod.string(),
+  socialScore: zod.number(),
+  coins: zod.number(),
+  kycStatus: zod.string(),
+  invitedCount: zod.number(),
+  joinedCount: zod.number(),
+  ptsEarned: zod.number(),
+});
+
+/**
+ * @summary Get tasks for current user
+ */
+export const GetTasksResponseItem = zod.object({
+  id: zod.string(),
+  userId: zod.string(),
+  title: zod.string(),
+  type: zod.string(),
+  status: zod.string(),
+  location: zod.string(),
+  dueDate: zod.string(),
+  coins: zod.number(),
+  icon: zod.string(),
+});
+export const GetTasksResponse = zod.array(GetTasksResponseItem);
+
+/**
+ * @summary Update a task status
+ */
+export const UpdateTaskParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const UpdateTaskBody = zod.object({
+  status: zod.string().optional(),
+});
+
+export const UpdateTaskResponse = zod.object({
+  id: zod.string(),
+  userId: zod.string(),
+  title: zod.string(),
+  type: zod.string(),
+  status: zod.string(),
+  location: zod.string(),
+  dueDate: zod.string(),
+  coins: zod.number(),
+  icon: zod.string(),
+});
