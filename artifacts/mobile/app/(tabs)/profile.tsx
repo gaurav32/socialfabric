@@ -267,22 +267,6 @@ export default function ProfileScreen() {
         <View style={styles.growHeader}>
           <Ionicons name="people-outline" size={16} color="rgba(255,255,255,0.8)" style={{ marginRight: 6 }} />
           <Text style={[styles.growTitle, { flex: 1 }]}>GROW THE COMMUNITY</Text>
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              const msg = encodeURIComponent(
-                `Join me on Social Fabric! Use my referral link: ${REFERRAL_LINK}`
-              );
-              const waUrl = Platform.OS === "web"
-                ? `https://web.whatsapp.com/send?text=${msg}`
-                : `https://wa.me/?text=${msg}`;
-              Linking.openURL(waUrl);
-            }}
-            style={styles.invitePill}
-          >
-            <Ionicons name="logo-whatsapp" size={14} color="#25D366" />
-            <Text style={styles.invitePillText}>Invite Friends</Text>
-          </Pressable>
         </View>
 
         <Text style={styles.growSubtitle}>
