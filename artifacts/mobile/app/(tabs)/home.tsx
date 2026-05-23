@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
+  Image,
   Platform,
   Pressable,
   ScrollView,
@@ -327,6 +328,13 @@ export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState<HomeTab>("askforhelp");
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [campaignFilter, setCampaignFilter] = useState<"all" | "joined">("all");
+
+  const joinedCount = MOCK_CAMPAIGNS.filter((c) => c.status === "joined").length;
+  const filteredCampaigns =
+    campaignFilter === "joined"
+      ? MOCK_CAMPAIGNS.filter((c) => c.status === "joined")
+      : MOCK_CAMPAIGNS;
 
   const displayName = user?.displayName ?? user?.email?.split("@")[0] ?? "Changemaker";
 
@@ -357,7 +365,10 @@ export default function HomeScreen() {
           </View>
           <Pressable onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
             <LinearGradient colors={["#7C6FF5", "#5B4FE8"]} style={styles.appIconBtn}>
-              <Ionicons name="person" size={20} color="#fff" />
+              <Image
+                source={require("@/assets/images/icon.png")}
+                style={styles.appIconImage}
+              />
             </LinearGradient>
           </Pressable>
         </View>
@@ -398,6 +409,7 @@ export default function HomeScreen() {
           })}
         </View>
 
+
         {/* ── Ask for Help content ── */}
         {activeTab === "askforhelp" && (
           <View style={styles.tabContent}>
@@ -426,10 +438,50 @@ export default function HomeScreen() {
         {activeTab === "campaigns" && (
           <View style={styles.tabContent}>
             <View style={styles.campaignHeader}>
-              <Text style={[styles.campaignMeta, { color: colors.primary }]}>
-                {MOCK_CAMPAIGNS.filter((c) => c.status === "joined").length} joined,{" "}
-                {MOCK_CAMPAIGNS.length + 1} total
-              </Text>
+              <View style={styles.filterChips}>
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setCampaignFilter(campaignFilter === "joined" ? "all" : "joined");
+                  }}
+                  style={[
+                    styles.filterChip,
+                    campaignFilter === "joined"
+                      ? { backgroundColor: colors.primary }
+                      : { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      { color: campaignFilter === "joined" ? "#fff" : colors.mutedForeground },
+                    ]}
+                  >
+                    {joinedCount} joined
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setCampaignFilter(campaignFilter === "all" ? "joined" : "all");
+                  }}
+                  style={[
+                    styles.filterChip,
+                    campaignFilter === "all"
+                      ? { backgroundColor: colors.primary }
+                      : { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      { color: campaignFilter === "all" ? "#fff" : colors.mutedForeground },
+                    ]}
+                  >
+                    {MOCK_CAMPAIGNS.length + 1} total
+                  </Text>
+                </Pressable>
+              </View>
               <Pressable
                 style={[styles.createBtn, { backgroundColor: colors.primary }]}
                 onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}
@@ -439,7 +491,7 @@ export default function HomeScreen() {
               </Pressable>
             </View>
 
-            {MOCK_CAMPAIGNS.map((c) => (
+            {filteredCampaigns.map((c) => (
               <CampaignCard key={c.id} item={c} onPress={() => setSelectedCampaign(c)} />
             ))}
           </View>
@@ -477,6 +529,7 @@ const styles = StyleSheet.create({
   blueDot: { width: 7, height: 7, borderRadius: 4 },
   communityText: { fontSize: 13 },
   appIconBtn: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  appIconImage: { width: 30, height: 30, borderRadius: 8 },
 
   // Map
   mapCard: { borderRadius: 16, borderWidth: 1, overflow: "hidden", padding: 10 },
@@ -521,11 +574,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     borderBottomWidth: 1,
     marginHorizontal: -16,
-    paddingHorizontal: 16,
   },
   tabItem: {
+    flex: 1,
+    alignItems: "center",
     paddingBottom: 10,
-    paddingRight: 20,
+    paddingTop: 4,
   },
   tabLabel: { fontSize: 14 },
 
@@ -566,6 +620,9 @@ const styles = StyleSheet.create({
   // Campaign section header
   campaignHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   campaignMeta: { fontSize: 13, fontWeight: "600" },
+  filterChips: { flexDirection: "row", gap: 6 },
+  filterChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
+  filterChipText: { fontSize: 12, fontWeight: "600" },
   createBtn: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10 },
   createBtnText: { color: "#fff", fontSize: 13, fontWeight: "600" },
 
