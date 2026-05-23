@@ -6,11 +6,13 @@ import { router } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
+  Image,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -115,9 +117,15 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const [copied, setCopied] = useState(false);
+  const { width } = useWindowDimensions();
+
+  const hp = (pct: number) => width * pct;
 
   const displayName = user?.displayName ?? "Dev User";
   const email = user?.email ?? "dev@socialfabric.app";
+
+  const avatarSize = hp(0.142);
+  const iconCircleSize = hp(0.175);
 
   const handleCopy = async () => {
     await Clipboard.setStringAsync(REFERRAL_CODE);
@@ -158,14 +166,20 @@ export default function ProfileScreen() {
       {/* ── Header ── */}
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
-        <View style={[styles.brandBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.brandBadgeText, { color: colors.primary }]}>Social Fabric</Text>
-        </View>
+        <Image
+          source={require("@/assets/images/icon.png")}
+          style={{
+            width: iconCircleSize,
+            height: iconCircleSize,
+            borderRadius: iconCircleSize / 2,
+          }}
+          resizeMode="cover"
+        />
       </View>
 
       {/* ── User Card ── */}
       <Card style={styles.userCard}>
-        <Avatar name={displayName} size={56} />
+        <Avatar name={displayName} size={avatarSize} />
         <View style={styles.userInfo}>
           <Text style={[styles.userName, { color: colors.text }]}>{displayName}</Text>
           <View style={styles.emailRow}>
@@ -312,13 +326,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   headerTitle: { fontSize: 24, fontWeight: "700" },
-  brandBadge: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  brandBadgeText: { fontSize: 13, fontWeight: "600" },
 
   // User card
   userCard: { flexDirection: "row", alignItems: "center", gap: 12 },
@@ -328,7 +335,7 @@ const styles = StyleSheet.create({
   userName: { fontSize: 16, fontWeight: "700", marginBottom: 3 },
   emailRow: { flexDirection: "row", alignItems: "center" },
   userEmail: { fontSize: 12 },
-  editLink: { flexDirection: "row", alignItems: "center", gap: 1, paddingVertical: 4, paddingLeft: 8 },
+  editLink: { flexDirection: "row", alignItems: "center", gap: 1, paddingVertical: 4, paddingLeft: 8, paddingRight: 10 },
   editLinkText: { fontSize: 13, fontWeight: "600" },
 
   // Stats
