@@ -15,7 +15,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
-import { setBaseUrl } from "@workspace/api-client-react";
+import { setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
 
 // Point the API client at the shared reverse-proxy domain in Expo (native/web).
 const domain = process.env.EXPO_PUBLIC_DOMAIN;
@@ -36,6 +36,14 @@ const queryClient = new QueryClient();
 function AuthGate() {
   const { user, loading } = useAuth();
   const segments = useSegments();
+
+  useEffect(() => {
+    if (typeof user?.getIdToken === "function") {
+      setAuthTokenGetter(() => (user as { getIdToken: () => Promise<string> }).getIdToken());
+    } else {
+      setAuthTokenGetter(null);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (loading) return;
