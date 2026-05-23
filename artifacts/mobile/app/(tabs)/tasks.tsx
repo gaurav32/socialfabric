@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   FlatList,
   Linking,
@@ -276,32 +276,26 @@ export default function TasksScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TaskStatus>("active");
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [statusOverrides, setStatusOverrides] = useState<Record<string, TaskStatus>>({});
 
   const { mutate: patchTask } = useUpdateTask();
 
-  const { data: apiTasks } = useQuery({
+  const { data: rawTasks = [] } = useQuery({
     queryKey: ["tasks"],
     queryFn: () => fetchWithCache("tasks", getTasks),
   });
 
-  useEffect(() => {
-    if (apiTasks) {
-      setTasks(
-        apiTasks.map((t) => ({
-          id: t.id,
-          title: t.title,
-          type: (t.type as TaskType) ?? "recommendation",
-          status: (t.status as TaskStatus) ?? "active",
-          location: t.location,
-          dueDate: t.dueDate,
-          coins: t.coins,
-          icon: t.icon,
-          iconGradient: DEFAULT_GRADIENT,
-        })),
-      );
-    }
-  }, [apiTasks]);
+  const tasks: Task[] = rawTasks.map((t) => ({
+    id: t.id,
+    title: t.title,
+    type: (t.type as TaskType) ?? "recommendation",
+    status: statusOverrides[t.id] ?? ((t.status as TaskStatus) ?? "active"),
+    location: t.location,
+    dueDate: t.dueDate,
+    coins: t.coins,
+    icon: t.icon,
+    iconGradient: DEFAULT_GRADIENT,
+  }));
 
   const displayName = user?.displayName ?? "Dev User";
 
@@ -312,12 +306,12 @@ export default function TasksScreen() {
   const filtered = tasks.filter((t) => t.status === activeTab);
 
   const handleAccept = (id: string) => {
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status: "accepted" as TaskStatus } : t)));
+    setStatusOverrides((prev) => ({ ...prev, [id]: "accepted" }));
     patchTask({ id, data: { status: "accepted" } });
   };
 
   const handleReject = (id: string) => {
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status: "failed" as TaskStatus } : t)));
+    setStatusOverrides((prev) => ({ ...prev, [id]: "failed" }));
     patchTask({ id, data: { status: "failed" } });
   };
 

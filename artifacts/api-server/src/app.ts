@@ -7,6 +7,14 @@ import { timestampMiddleware } from "./middleware/timestamp";
 
 const app: Express = express();
 
+// Disable ETag so browsers always get 200 with fresh data instead of 304.
+app.set("etag", false);
+// Tell clients not to cache API responses.
+app.use((_req, res, next) => {
+  res.setHeader("Cache-Control", "no-store");
+  next();
+});
+
 app.use(
   pinoHttp({
     logger,

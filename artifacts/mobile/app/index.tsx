@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
+import { Redirect, router } from "expo-router";
 import { useEffect, useRef } from "react";
 import {
   ActivityIndicator,
@@ -40,11 +40,7 @@ export default function PreLoginScreen() {
     ]).start();
   }, []);
 
-  useEffect(() => {
-    if (!loading && user) {
-      router.replace("/(tabs)/home");
-    }
-  }, [user, loading]);
+  if (!loading && user) return <Redirect href="/(tabs)/home" />;
 
   if (loading) {
     return (
