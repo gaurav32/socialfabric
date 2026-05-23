@@ -143,16 +143,14 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={[styles.rootWrapper, { backgroundColor: colors.background }]}>
+    <View style={[StyleSheet.absoluteFillObject, { backgroundColor: colors.background }]}>
     <ScrollView
-      style={styles.root}
+      style={[styles.root, Platform.OS === "web" && { overflow: "scroll" as "scroll" }]}
       contentContainerStyle={[
         styles.content,
         { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 24 },
       ]}
       showsVerticalScrollIndicator={false}
-      bounces={true}
-      alwaysBounceVertical={false}
     >
       {/* ── Header ── */}
       <View style={styles.header}>
