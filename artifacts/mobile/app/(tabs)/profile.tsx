@@ -143,13 +143,16 @@ export default function ProfileScreen() {
   };
 
   return (
+    <View style={[styles.rootWrapper, { backgroundColor: colors.background }]}>
     <ScrollView
-      style={[styles.root, { backgroundColor: colors.background }]}
+      style={styles.root}
       contentContainerStyle={[
         styles.content,
         { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 24 },
       ]}
       showsVerticalScrollIndicator={false}
+      bounces={true}
+      alwaysBounceVertical={false}
     >
       {/* ── Header ── */}
       <View style={styles.header}>
@@ -290,10 +293,12 @@ export default function ProfileScreen() {
         <Text style={[styles.signOutText, { color: "#EF4444" }]}>Sign Out</Text>
       </Pressable>
     </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  rootWrapper: { flex: 1 },
   root: { flex: 1 },
   content: { paddingHorizontal: 16, gap: 12 },
 
