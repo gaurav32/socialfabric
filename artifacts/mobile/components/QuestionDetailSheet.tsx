@@ -281,7 +281,7 @@ export default function QuestionDetailSheet({ question, onClose }: Props) {
 
   useEffect(() => {
     if (visible) {
-      setShowBids(false);
+      setShowBids(true);
       setResolved(false);
       Animated.spring(translateY, {
         toValue: 0,
