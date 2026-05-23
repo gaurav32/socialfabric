@@ -507,7 +507,6 @@ export default function HomeScreen() {
                     { key: "new", label: `${newCount} new` },
                     { key: "recommended", label: `${recommendedCount} recommended` },
                     { key: "joined", label: `${joinedCount} joined` },
-                    { key: "all", label: `${MOCK_CAMPAIGNS.length + 1} total` },
                   ] as const
                 ).map((chip) => {
                   const isActive = campaignFilter === chip.key;
@@ -678,7 +677,7 @@ const styles = StyleSheet.create({
   filterChipsScroll: { flex: 1 },
   filterChips: { flexDirection: "row", gap: 6, alignItems: "center" },
   filterChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
-  filterChipText: { fontSize: 12, fontWeight: "600" },
+  filterChipText: { fontSize: 10, fontWeight: "600" },
   createBtn: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10 },
   createBtnText: { color: "#fff", fontSize: 13, fontWeight: "600" },
 
