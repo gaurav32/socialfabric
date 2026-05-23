@@ -384,7 +384,7 @@ export default function TasksScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const task = tasks.find((t) => t.id === id);
     const taskTitle = task?.title ?? "a task";
-    const deepLink = `${APP_DEEP_LINK_BASE}/${id}`;
+    const deepLink = `${APP_DEEP_LINK_BASE}/${id}?ref=${REFERRAL_CODE}&taskCode=${id}`;
     const message =
       `Hey! I found something on Social Fabric 🧵\n\n` +
       `*${taskTitle}*\n` +
