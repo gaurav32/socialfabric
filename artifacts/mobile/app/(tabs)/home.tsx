@@ -343,29 +343,23 @@ export default function HomeScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Progress pill ── */}
-        <View style={styles.progressRow}>
-          <LinearGradient
-            colors={[colors.primary, colors.accent]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.progressPill}
-          >
-            <Ionicons name="compass-outline" size={13} color="#fff" style={{ marginRight: 5 }} />
-            <Text style={styles.progressText}>Step 1 of 5 · Discover</Text>
-          </LinearGradient>
-        </View>
-
-        {/* ── Greeting ── */}
-        <View style={styles.greetingSection}>
-          <Text style={[styles.greetingSmall, { color: colors.mutedForeground }]}>{greeting}</Text>
-          <Text style={[styles.greetingName, { color: colors.text }]}>{displayName} 👋</Text>
-          <View style={styles.communityRow}>
-            <View style={[styles.blueDot, { backgroundColor: colors.primary }]} />
-            <Text style={[styles.communityText, { color: colors.mutedForeground }]}>
-              Community for changemakers
-            </Text>
+        {/* ── Greeting + App Icon ── */}
+        <View style={styles.greetingRow}>
+          <View style={styles.greetingSection}>
+            <Text style={[styles.greetingSmall, { color: colors.mutedForeground }]}>{greeting}</Text>
+            <Text style={[styles.greetingName, { color: colors.text }]}>{displayName} 👋</Text>
+            <View style={styles.communityRow}>
+              <View style={[styles.blueDot, { backgroundColor: colors.primary }]} />
+              <Text style={[styles.communityText, { color: colors.mutedForeground }]}>
+                Community for changemakers
+              </Text>
+            </View>
           </View>
+          <Pressable onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
+            <LinearGradient colors={["#7C6FF5", "#5B4FE8"]} style={styles.appIconBtn}>
+              <Ionicons name="person" size={20} color="#fff" />
+            </LinearGradient>
+          </Pressable>
         </View>
 
         {/* ── Live Map ── */}
@@ -373,9 +367,9 @@ export default function HomeScreen() {
 
         {/* ── Tabs ── */}
         <View style={[styles.tabsBar, { borderBottomColor: colors.border }]}>
-          {([ 
-            { key: "campaigns" as HomeTab, label: "Active Campaigns" },
+          {([
             { key: "askforhelp" as HomeTab, label: "Ask for Help" },
+            { key: "campaigns" as HomeTab, label: "Active Campaigns" },
           ]).map((tab) => {
             const isActive = activeTab === tab.key;
             return (
@@ -432,8 +426,17 @@ export default function HomeScreen() {
         {activeTab === "campaigns" && (
           <View style={styles.tabContent}>
             <View style={styles.campaignHeader}>
-              <Text style={[styles.campaignHeading, { color: colors.text }]}>Active Campaigns</Text>
-              <Text style={[styles.nearYou, { color: colors.primary }]}>{MOCK_CAMPAIGNS.length} near you</Text>
+              <Text style={[styles.campaignMeta, { color: colors.primary }]}>
+                {MOCK_CAMPAIGNS.filter((c) => c.status === "joined").length} joined,{" "}
+                {MOCK_CAMPAIGNS.length + 1} total
+              </Text>
+              <Pressable
+                style={[styles.createBtn, { backgroundColor: colors.primary }]}
+                onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}
+              >
+                <Ionicons name="add" size={15} color="#fff" style={{ marginRight: 3 }} />
+                <Text style={styles.createBtnText}>Create</Text>
+              </Pressable>
             </View>
 
             {MOCK_CAMPAIGNS.map((c) => (
@@ -465,24 +468,15 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingHorizontal: 16, gap: 14 },
 
-  // Progress
-  progressRow: { alignItems: "center" },
-  progressPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-    borderRadius: 20,
-  },
-  progressText: { color: "#fff", fontSize: 13, fontWeight: "600" },
-
-  // Greeting
-  greetingSection: { gap: 3 },
+  // Greeting row
+  greetingRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" },
+  greetingSection: { flex: 1, gap: 3 },
   greetingSmall: { fontSize: 13 },
   greetingName: { fontSize: 26, fontWeight: "800", lineHeight: 32 },
   communityRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 },
   blueDot: { width: 7, height: 7, borderRadius: 4 },
   communityText: { fontSize: 13 },
+  appIconBtn: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
 
   // Map
   mapCard: { borderRadius: 16, borderWidth: 1, overflow: "hidden", padding: 10 },
@@ -571,8 +565,9 @@ const styles = StyleSheet.create({
 
   // Campaign section header
   campaignHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  campaignHeading: { fontSize: 18, fontWeight: "800" },
-  nearYou: { fontSize: 13, fontWeight: "600" },
+  campaignMeta: { fontSize: 13, fontWeight: "600" },
+  createBtn: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10 },
+  createBtnText: { color: "#fff", fontSize: 13, fontWeight: "600" },
 
   // Campaign card
   campaignCard: { borderRadius: 16, padding: 14, gap: 12 },

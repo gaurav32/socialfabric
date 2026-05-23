@@ -11,7 +11,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableWithoutFeedback,
   View,
 } from "react-native";
 
@@ -314,9 +313,7 @@ export default function QuestionDetailSheet({ question, onClose }: Props) {
   return (
     <Modal transparent animationType="none" visible={visible} onRequestClose={close}>
       {/* Dim backdrop */}
-      <TouchableWithoutFeedback onPress={close}>
-        <View style={styles.backdrop} />
-      </TouchableWithoutFeedback>
+      <Pressable style={styles.backdrop} onPress={close} />
 
       <Animated.View
         style={[

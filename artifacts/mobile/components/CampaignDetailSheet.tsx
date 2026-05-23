@@ -11,7 +11,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableWithoutFeedback,
   View,
 } from "react-native";
 
@@ -133,11 +132,9 @@ function ContributeModal({ visible, upiCode, onClose }: { visible: boolean; upiC
 
   return (
     <Modal transparent animationType="none" visible={visible} onRequestClose={onClose}>
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={cm.backdrop} />
-      </TouchableWithoutFeedback>
-      <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-        <View style={cm.center} pointerEvents="box-none">
+      <Pressable style={cm.backdrop} onPress={onClose} />
+      <View style={[StyleSheet.absoluteFill, { pointerEvents: "box-none" }]}>
+        <View style={[cm.center, { pointerEvents: "box-none" }]}>
           <Animated.View
             style={[
               cm.card,
@@ -374,9 +371,7 @@ export default function CampaignDetailSheet({ campaign, onClose }: Props) {
   return (
     <>
       <Modal transparent animationType="none" visible={visible} onRequestClose={close}>
-        <TouchableWithoutFeedback onPress={close}>
-          <View style={s.backdrop} />
-        </TouchableWithoutFeedback>
+        <Pressable style={s.backdrop} onPress={close} />
 
         <Animated.View
           style={[
