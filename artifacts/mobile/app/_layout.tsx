@@ -6,9 +6,10 @@ import {
   useFonts,
 } from "@expo-google-fonts/inter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { router, Stack, useSegments } from "expo-router";
+import { router, Stack, useRootNavigationState, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
+import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -18,9 +19,10 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
 
 // Point the API client at the shared reverse-proxy domain in Expo (native/web).
-const domain = process.env.EXPO_PUBLIC_DOMAIN;
-if (domain) {
-  setBaseUrl(`https://${domain}`);
+// EXPO_PUBLIC_API_URL is set in the environment (unlike EXPO_PUBLIC_DOMAIN).
+const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+if (apiUrl) {
+  setBaseUrl(apiUrl);
 }
 
 SplashScreen.preventAutoHideAsync();
@@ -36,6 +38,7 @@ const queryClient = new QueryClient();
 function AuthGate() {
   const { user, loading } = useAuth();
   const segments = useSegments();
+  const navState = useRootNavigationState();
 
   useEffect(() => {
     if (typeof user?.getIdToken === "function") {
@@ -46,6 +49,8 @@ function AuthGate() {
   }, [user]);
 
   useEffect(() => {
+    // Wait until the navigator has actually mounted before trying to navigate.
+    if (!navState?.key) return;
     if (loading) return;
 
     const inAuthGroup = segments[0] === "(tabs)";
@@ -57,7 +62,7 @@ function AuthGate() {
       // Logged out while inside tabs — back to login
       router.replace("/");
     }
-  }, [user, loading, segments]);
+  }, [user, loading, segments, navState?.key]);
 
   return null;
 }
@@ -83,14 +88,27 @@ export default function RootLayout() {
     Inter_600SemiBold,
     Inter_700Bold,
   });
+  const hiddenRef = useRef(false);
 
-  useEffect(() => {
-    if (fontsLoaded || fontError) {
+  const hideSplash = () => {
+    if (!hiddenRef.current) {
+      hiddenRef.current = true;
       SplashScreen.hideAsync();
     }
+  };
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) hideSplash();
   }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded && !fontError) return null;
+  // Safety net: never block the UI for more than 2s waiting for fonts.
+  useEffect(() => {
+    const t = setTimeout(hideSplash, 2000);
+    return () => clearTimeout(t);
+  }, []);
+
+  // On web, system fonts are fine — don't hold up the render at all.
+  if (Platform.OS !== "web" && !fontsLoaded && !fontError && !hiddenRef.current) return null;
 
   return (
     <SafeAreaProvider>
