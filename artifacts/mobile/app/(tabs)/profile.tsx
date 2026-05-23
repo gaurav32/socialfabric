@@ -289,15 +289,40 @@ export default function ProfileScreen() {
           Invite friends and earn social score points for every person who joins.
         </Text>
 
-        {/* Copyable referral link */}
-        <View style={[styles.referralRow, { backgroundColor: "rgba(255,255,255,0.15)" }]}>
-          <Text style={styles.referralLink} numberOfLines={1} ellipsizeMode="tail">
-            {REFERRAL_LINK}
-          </Text>
-          <Pressable style={styles.copyBtn} onPress={handleCopy}>
-            <Ionicons name={copied ? "checkmark" : "copy-outline"} size={14} color="#fff" />
-            <Text style={styles.copyText}>{copied ? "Copied" : "Copy"}</Text>
+        {/* Two action pills */}
+        <View style={styles.pillRow}>
+          {/* Pill 1 — WA Invite */}
+          <Pressable
+            style={styles.actionPill}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              const msg = encodeURIComponent(`Join me on Social Fabric! Use my referral link: ${REFERRAL_LINK}`);
+              Linking.openURL(Platform.OS === "web" ? `https://web.whatsapp.com/send?text=${msg}` : `https://wa.me/?text=${msg}`);
+            }}
+          >
+            <Ionicons name="logo-whatsapp" size={17} color="#25D366" />
+            <Text style={styles.actionPillText}>Invite Friends</Text>
           </Pressable>
+
+          {/* Pill 2 — Promote on social */}
+          <View style={styles.promotePill}>
+            <View style={styles.promoteTopRow}>
+              <Pressable onPress={handleCopy} style={styles.promoteCopyBtn}>
+                <Ionicons name={copied ? "checkmark" : "copy-outline"} size={13} color="#555" />
+              </Pressable>
+              <Text style={styles.actionPillText}>Promote on</Text>
+            </View>
+            <View style={styles.miniIconsRow}>
+              {(["instagram","twitter","facebook","youtube"] as const).map((k) => {
+                const s = SOCIAL_SHARES.find((x) => x.key === k)!;
+                return (
+                  <Pressable key={k} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL(s.url()); }}>
+                    <Ionicons name={s.icon as never} size={14} color={s.color} />
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
         </View>
 
 
@@ -446,17 +471,34 @@ const styles = StyleSheet.create({
   growTitle: { color: "rgba(255,255,255,0.85)", fontSize: 11, fontWeight: "700", letterSpacing: 0.8 },
   growSubtitle: { color: "rgba(255,255,255,0.8)", fontSize: 13, lineHeight: 19 },
 
-  referralRow: {
+  pillRow: { flexDirection: "row", gap: 10 },
+
+  actionPill: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: "#fff",
     borderRadius: 10,
-    paddingHorizontal: 14,
+    paddingHorizontal: 10,
     paddingVertical: 11,
   },
-  referralLink: { color: "#fff", fontSize: 12, fontWeight: "500", flex: 1, marginRight: 8, opacity: 0.9 },
-  copyBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
-  copyText: { color: "#fff", fontSize: 13, fontWeight: "500" },
+  actionPillText: { fontSize: 12, fontWeight: "700", color: "#222" },
+
+  promotePill: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+  },
+  promoteTopRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+  promoteCopyBtn: { padding: 2 },
+  miniIconsRow: { flexDirection: "row", gap: 10, alignItems: "center" },
 
   invitePill: {
     flexDirection: "row",
