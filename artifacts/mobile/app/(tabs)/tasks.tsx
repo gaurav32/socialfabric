@@ -20,6 +20,9 @@ import { useColors } from "@/hooks/useColors";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+const REFERRAL_CODE = "FABRIC-ADI2025";
+const APP_DEEP_LINK_BASE = "socialfabric://task";
+
 type TaskStatus = "active" | "accepted" | "completed" | "failed";
 type TaskType = "recommendation" | "bid" | "survey";
 
@@ -377,12 +380,23 @@ export default function TasksScreen() {
   const handleReject = (id: string) =>
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status: "failed" as TaskStatus } : t)));
 
-  const handleWhatsApp = (_id: string) => {
+  const handleWhatsApp = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const url = Platform.OS === "web" ? "https://web.whatsapp.com" : "whatsapp://";
-    Linking.canOpenURL(url).then((supported) => {
-      Linking.openURL(supported ? url : "https://web.whatsapp.com");
-    });
+    const task = tasks.find((t) => t.id === id);
+    const taskTitle = task?.title ?? "a task";
+    const deepLink = `${APP_DEEP_LINK_BASE}/${id}`;
+    const message =
+      `Hey! I found something on Social Fabric 🧵\n\n` +
+      `*${taskTitle}*\n` +
+      `📍 ${task?.location ?? ""}\n\n` +
+      `Join using my referral code *${REFERRAL_CODE}* and open this task directly:\n` +
+      `${deepLink}\n\n` +
+      `Download the app: https://socialfabric.app`;
+    const encoded = encodeURIComponent(message);
+    const waUrl = Platform.OS === "web"
+      ? `https://web.whatsapp.com/send?text=${encoded}`
+      : `https://wa.me/?text=${encoded}`;
+    Linking.openURL(waUrl);
   };
 
   return (
