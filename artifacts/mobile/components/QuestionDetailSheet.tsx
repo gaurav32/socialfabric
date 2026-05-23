@@ -274,7 +274,7 @@ interface Props {
 export default function QuestionDetailSheet({ question, onClose }: Props) {
   const colors = useColors();
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
-  const [showBids, setShowBids] = useState(false);
+  const [showBids, setShowBids] = useState(true);
   const [selectedBid, setSelectedBid] = useState<string | null>(null);
   const [resolved, setResolved] = useState(false);
   const visible = question !== null;
@@ -370,7 +370,7 @@ export default function QuestionDetailSheet({ question, onClose }: Props) {
               onPress={() => { setShowBids((b) => !b); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
             >
               <Text style={[styles.milestonesBtnText, { color: colors.primary }]}>
-                Milestones {showBids ? "∧" : ">"}
+                Milestones {showBids ? ">" : "∧"}
               </Text>
             </Pressable>
           </View>
