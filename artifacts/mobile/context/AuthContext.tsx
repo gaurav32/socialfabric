@@ -102,16 +102,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await signInWithPopup(auth, provider);
   };
 
-  /** Native: server-side OAuth proxy → openAuthSessionAsync
+  /** Native: server-side OAuth proxy → Linking listener
    *
-   * We use an HTTPS redirect URL on the API server (not an exp:// custom
-   * scheme) because Chrome Custom Tabs reliably follows HTTPS 302 redirects
-   * and returns the URL to openAuthSessionAsync, whereas custom schemes are
-   * blocked or cause errors in modern Chrome on Android.
+   * We must use the exp:// custom scheme as the redirectUrl — not HTTPS.
+   * openAuthSessionAsync on Android extracts only the SCHEME from redirectUrl
+   * and watches for ANY URL with that scheme. Using "https" would cause the
+   * tab to close the instant Chrome navigates to accounts.google.com.
+   *
+   * Instead, the server's HTML page uses an Android intent:// URL which
+   * reliably opens Expo Go without a user gesture. The Linking listener
+   * (above) catches the exp:// deep link and processes the token.
+   * openAuthSessionAsync is still used to open and manage the browser tab.
    */
   const signInWithGoogleNative = async () => {
-    // HTTPS redirect URL — Chrome Custom Tabs handles this reliably
-    const appRedirectUri = `${API_ORIGIN}/api/auth/google/done`;
+    const appRedirectUri = Linking.createURL("auth/google-callback");
     const startUrl =
       `${API_ORIGIN}/api/auth/google/start` +
       `?app_redirect_uri=${encodeURIComponent(appRedirectUri)}`;
@@ -120,9 +124,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const result = await WebBrowser.openAuthSessionAsync(startUrl, appRedirectUri);
 
-    googlePendingRef.current = false;
-
+    // "success" — Chrome detected the exp:// redirect and returned it
     if (result.type === "success") {
+      googlePendingRef.current = false;
       const idToken = extractIdToken(result.url);
       if (idToken) {
         await firebaseSignInWithToken(idToken);
@@ -134,7 +138,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (result.type === "cancel" || result.type === "dismiss") {
+    // "cancel" / "dismiss" — tab was closed; the Linking listener may have
+    // already handled the token (Android intent fired before tab closed).
+    // Wait briefly so the listener has time to fire.
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    if (googlePendingRef.current) {
+      // Listener didn't fire — user genuinely cancelled
+      googlePendingRef.current = false;
       setError("Sign-in was cancelled.");
     }
   };

@@ -85,10 +85,59 @@ router.get("/auth/google/callback", async (req, res) => {
       const separator = appRedirectUri.includes("?") ? "&" : "?";
       const finalUrl = `${appRedirectUri}${separator}id_token=${encodeURIComponent(idToken)}`;
       req.log.info({ finalUrl }, "Redirecting back to app");
-      // 302 redirect — Chrome Custom Tabs detects this and closes the tab,
-      // signalling openAuthSessionAsync with the result URL. This is more
-      // reliable than a JS redirect for custom schemes (exp://, mobile://).
-      res.redirect(finalUrl);
+
+      // Parse the exp:// URL to build an Android intent:// URL.
+      // intent:// is handled natively by Chrome/Android and opens the target
+      // app without requiring a user gesture (unlike window.location = "exp://").
+      // Format: intent://<host>/<path>#Intent;scheme=<scheme>;package=<pkg>;end
+      let intentUrl = finalUrl;
+      try {
+        const parsed = new URL(finalUrl);
+        const host = parsed.host;           // e.g. xxx.expo.pike.replit.dev
+        const pathAndQuery = parsed.pathname + parsed.search; // /--/auth/google-callback?id_token=...
+        const scheme = parsed.protocol.replace(":", ""); // "exp"
+        // Expo Go's Android package name
+        const pkg = "host.exp.exponent";
+        const fallback = encodeURIComponent("https://expo.dev/go");
+        intentUrl =
+          `intent://${host}${pathAndQuery}` +
+          `#Intent;scheme=${scheme};package=${pkg};` +
+          `S.browser_fallback_url=${fallback};end`;
+      } catch {
+        // Fallback: use raw finalUrl (works if it's not exp://)
+        intentUrl = finalUrl;
+      }
+
+      res.send(`<!DOCTYPE html>
+<html>
+<head>
+<title>Returning to app…</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body{font-family:system-ui,sans-serif;display:flex;flex-direction:column;
+       align-items:center;justify-content:center;min-height:100vh;margin:0;
+       background:#F0F2FF;color:#1a1a2e}
+  h2{color:#5B4FE8;margin-bottom:8px}
+  p{color:#666;margin:4px 0}
+  .btn{margin-top:20px;padding:14px 28px;background:#5B4FE8;color:#fff;
+       border:none;border-radius:12px;font-size:16px;cursor:pointer;
+       text-decoration:none;display:inline-block}
+</style>
+</head>
+<body>
+<h2>✓ Signed in with Google</h2>
+<p>Opening Social Fabric…</p>
+<a class="btn" href="${intentUrl}">Open App</a>
+<script>
+  // intent:// opens Expo Go directly on Android without a user gesture.
+  // Also try the raw exp:// URL as a fallback after a short delay.
+  try { window.location.replace(${JSON.stringify(intentUrl)}); } catch(e){}
+  setTimeout(function(){
+    try { window.location.replace(${JSON.stringify(finalUrl)}); } catch(e){}
+  }, 800);
+</script>
+</body>
+</html>`);
     } else {
       res.status(200).send("Sign-in complete. You can close this window.");
     }
