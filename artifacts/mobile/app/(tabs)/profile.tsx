@@ -278,9 +278,10 @@ export default function ProfileScreen() {
                 : `https://wa.me/?text=${msg}`;
               Linking.openURL(waUrl);
             }}
-            style={styles.waIconBtn}
+            style={styles.invitePill}
           >
-            <Ionicons name="logo-whatsapp" size={22} color="#25D366" />
+            <Ionicons name="logo-whatsapp" size={14} color="#25D366" />
+            <Text style={styles.invitePillText}>Invite Friends</Text>
           </Pressable>
         </View>
 
@@ -299,21 +300,6 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
 
-        {/* Share on social platforms */}
-        <View style={styles.shareRow}>
-          {SOCIAL_SHARES.map((s) => (
-            <Pressable
-              key={s.key}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                Linking.openURL(s.url());
-              }}
-              style={[styles.shareIcon, { backgroundColor: "#fff" }]}
-            >
-              <Ionicons name={s.icon as never} size={20} color={s.color} />
-            </Pressable>
-          ))}
-        </View>
 
         {/* Stats */}
         <View style={styles.growStats}>
@@ -472,26 +458,19 @@ const styles = StyleSheet.create({
   copyBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
   copyText: { color: "#fff", fontSize: 13, fontWeight: "500" },
 
-  waIconBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "rgba(37,211,102,0.15)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  shareRow: {
+  invitePill: {
     flexDirection: "row",
-    justifyContent: "center",
-    gap: 10,
-  },
-  shareIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 7,
     alignItems: "center",
-    justifyContent: "center",
+    gap: 5,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  invitePillText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#222",
   },
 
   followIconsRow: {
