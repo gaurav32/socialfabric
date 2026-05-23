@@ -98,10 +98,10 @@ const MOCK_CAMPAIGNS: Campaign[] = [
 ];
 
 const LOCATIONS = [
-  { label: "Banjara Hills", top: "18%", left: "48%", color: "#5B4FE8" },
-  { label: "Dwarka Sec 21", top: "38%", left: "22%", color: "#E8380F" },
-  { label: "Koramangala", top: "62%", left: "10%", color: "#5B4FE8" },
-  { label: "Andheri", top: "30%", left: "68%", color: "#5B4FE8" },
+  { label: "Banjara Hills", top: "14%", left: "46%", dotTop: "34%", dotLeft: "52%" },
+  { label: "Dwarka Sec 21", top: "34%", left: "18%", dotTop: "54%", dotLeft: "26%" },
+  { label: "Koramangala", top: "58%", left: "4%", dotTop: "76%", dotLeft: "10%" },
+  { label: "Andheri", top: "26%", left: "65%", dotTop: "46%", dotLeft: "71%" },
 ];
 
 const ICON_GRADIENT: readonly [string, string] = ["#7C6FF5", "#5B4FE8"];
@@ -134,9 +134,53 @@ function LiveMapSection() {
       </View>
 
       {/* Map area */}
-      <View style={[styles.mapArea, { backgroundColor: "#D8E8F5" }]}>
-        {/* Grid lines */}
-        <View style={[styles.mapGrid, { borderColor: "#C0D4E8" }]} />
+      <View style={[styles.mapArea, { backgroundColor: "#ECEFFE" }]}>
+        {/* Street grid — horizontal lines */}
+        {([25, 50, 75] as const).map((pct) => (
+          <View
+            key={`h${pct}`}
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              top: `${pct}%` as never,
+              height: 1,
+              backgroundColor: "rgba(255,255,255,0.75)",
+            }}
+          />
+        ))}
+        {/* Street grid — vertical lines */}
+        {([20, 40, 60, 80] as const).map((pct) => (
+          <View
+            key={`v${pct}`}
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: `${pct}%` as never,
+              width: 1,
+              backgroundColor: "rgba(255,255,255,0.75)",
+            }}
+          />
+        ))}
+
+        {/* Indicator dots */}
+        {LOCATIONS.map((loc) => (
+          <View
+            key={`dot-${loc.label}`}
+            style={{
+              position: "absolute",
+              top: loc.dotTop as never,
+              left: loc.dotLeft as never,
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: "#312E81",
+              borderWidth: 1.5,
+              borderColor: "#fff",
+            }}
+          />
+        ))}
 
         {/* Location bubbles */}
         {LOCATIONS.map((loc) => (
@@ -145,7 +189,7 @@ function LiveMapSection() {
             style={[
               styles.locationBubble,
               {
-                backgroundColor: loc.color,
+                backgroundColor: "#5B4FE8",
                 top: loc.top as never,
                 left: loc.left as never,
               },
@@ -380,12 +424,10 @@ export default function HomeScreen() {
             </View>
           </View>
           <Pressable onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
-            <LinearGradient colors={["#7C6FF5", "#5B4FE8"]} style={styles.appIconBtn}>
-              <Image
-                source={require("@/assets/images/icon.png")}
-                style={styles.appIconImage}
-              />
-            </LinearGradient>
+            <Image
+              source={require("@/assets/images/icon.png")}
+              style={styles.appIconImage}
+            />
           </Pressable>
         </View>
 
@@ -542,7 +584,7 @@ const styles = StyleSheet.create({
   blueDot: { width: 7, height: 7, borderRadius: 4 },
   communityText: { fontSize: 13 },
   appIconBtn: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
-  appIconImage: { width: 30, height: 30, borderRadius: 8 },
+  appIconImage: { width: 44, height: 44, borderRadius: 12 },
 
   // Map
   mapCard: { borderRadius: 16, borderWidth: 1, overflow: "hidden", padding: 10 },
