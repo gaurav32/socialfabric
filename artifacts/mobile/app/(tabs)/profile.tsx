@@ -7,6 +7,7 @@ import React, { useState } from "react";
 import {
   Alert,
   Image,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -21,6 +22,34 @@ import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 
 const REFERRAL_CODE = "FABRIC-ADI2025";
+const REFERRAL_LINK = `https://socialfabric.app/join?ref=${REFERRAL_CODE}`;
+
+const SOCIAL_SHARES = [
+  { key: "whatsapp", icon: "logo-whatsapp",  color: "#25D366", url: () => {
+    const msg = encodeURIComponent(`Join me on Social Fabric! Use my referral link: ${REFERRAL_LINK}`);
+    return Platform.OS === "web" ? `https://web.whatsapp.com/send?text=${msg}` : `https://wa.me/?text=${msg}`;
+  }},
+  { key: "instagram", icon: "logo-instagram", color: "#E1306C", url: () => "https://www.instagram.com/" },
+  { key: "twitter",   icon: "logo-twitter",   color: "#1DA1F2", url: () => {
+    const msg = encodeURIComponent(`Join me on Social Fabric! ${REFERRAL_LINK}`);
+    return `https://twitter.com/intent/tweet?text=${msg}`;
+  }},
+  { key: "facebook",  icon: "logo-facebook",  color: "#1877F2", url: () =>
+    `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(REFERRAL_LINK)}`
+  },
+  { key: "youtube",   icon: "logo-youtube",   color: "#FF0000", url: () => "https://www.youtube.com/@socialfabric" },
+  { key: "snapchat",  icon: "logo-snapchat",  color: "#FFFC00", url: () =>
+    `https://www.snapchat.com/scan?attachmentUrl=${encodeURIComponent(REFERRAL_LINK)}`
+  },
+] as const;
+
+const FOLLOW_US = [
+  { key: "instagram", icon: "logo-instagram", color: "#E1306C", url: "https://www.instagram.com/socialfabric" },
+  { key: "twitter",   icon: "logo-twitter",   color: "#1DA1F2", url: "https://twitter.com/socialfabric" },
+  { key: "facebook",  icon: "logo-facebook",  color: "#1877F2", url: "https://www.facebook.com/socialfabric" },
+  { key: "youtube",   icon: "logo-youtube",   color: "#FF0000", url: "https://www.youtube.com/@socialfabric" },
+  { key: "snapchat",  icon: "logo-snapchat",  color: "#FFFC00", url: "https://www.snapchat.com/add/socialfabric" },
+] as const;
 
 function Avatar({ name, size = 52 }: { name: string; size?: number }) {
   const initials = name
@@ -245,31 +274,57 @@ export default function ProfileScreen() {
 
       {/* ── Grow the Community ── */}
       <View style={[styles.growCard, { backgroundColor: colors.primary }]}>
+        {/* Header row with WhatsApp icon */}
         <View style={styles.growHeader}>
           <Ionicons name="people-outline" size={16} color="rgba(255,255,255,0.8)" style={{ marginRight: 6 }} />
-          <Text style={styles.growTitle}>GROW THE COMMUNITY</Text>
+          <Text style={[styles.growTitle, { flex: 1 }]}>GROW THE COMMUNITY</Text>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              const msg = encodeURIComponent(
+                `Join me on Social Fabric! Use my referral link: ${REFERRAL_LINK}`
+              );
+              const waUrl = Platform.OS === "web"
+                ? `https://web.whatsapp.com/send?text=${msg}`
+                : `https://wa.me/?text=${msg}`;
+              Linking.openURL(waUrl);
+            }}
+            style={styles.waIconBtn}
+          >
+            <Ionicons name="logo-whatsapp" size={22} color="#25D366" />
+          </Pressable>
         </View>
+
         <Text style={styles.growSubtitle}>
           Invite friends and earn social score points for every person who joins.
         </Text>
 
-        {/* Referral code */}
+        {/* Copyable referral link */}
         <View style={[styles.referralRow, { backgroundColor: "rgba(255,255,255,0.15)" }]}>
-          <Text style={styles.referralCode}>{REFERRAL_CODE}</Text>
+          <Text style={styles.referralLink} numberOfLines={1} ellipsizeMode="tail">
+            {REFERRAL_LINK}
+          </Text>
           <Pressable style={styles.copyBtn} onPress={handleCopy}>
             <Ionicons name={copied ? "checkmark" : "copy-outline"} size={14} color="#fff" />
             <Text style={styles.copyText}>{copied ? "Copied" : "Copy"}</Text>
           </Pressable>
         </View>
 
-        {/* Invite button */}
-        <Pressable
-          style={[styles.inviteBtn, { backgroundColor: "#fff" }]}
-          onPress={() => {}}
-        >
-          <Ionicons name="person-add-outline" size={16} color={colors.primary} style={{ marginRight: 8 }} />
-          <Text style={[styles.inviteBtnText, { color: colors.primary }]}>Invite Friends</Text>
-        </Pressable>
+        {/* Share on social platforms */}
+        <View style={styles.shareRow}>
+          {SOCIAL_SHARES.map((s) => (
+            <Pressable
+              key={s.key}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                Linking.openURL(s.url());
+              }}
+              style={[styles.shareIcon, { backgroundColor: s.color === "#FFFC00" ? s.color : `${s.color}22` }]}
+            >
+              <Ionicons name={s.icon as never} size={18} color={s.color === "#FFFC00" ? "#000" : s.color} />
+            </Pressable>
+          ))}
+        </View>
 
         {/* Stats */}
         <View style={styles.growStats}>
@@ -285,6 +340,25 @@ export default function ProfileScreen() {
           ))}
         </View>
       </View>
+
+      {/* ── Follow Us On ── */}
+      <SectionLabel label="Follow Us On" />
+      <Card>
+        <View style={styles.followIconsRow}>
+          {FOLLOW_US.map((s) => (
+            <Pressable
+              key={s.key}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                Linking.openURL(s.url);
+              }}
+              style={[styles.followIcon, { backgroundColor: s.color === "#FFFC00" ? s.color : `${s.color}18` }]}
+            >
+              <Ionicons name={s.icon as never} size={22} color={s.color === "#FFFC00" ? "#000" : s.color} />
+            </Pressable>
+          ))}
+        </View>
+      </Card>
 
       {/* ── Legal & Support ── */}
       <SectionLabel label="Legal & Support" />
@@ -424,18 +498,47 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 11,
   },
-  referralCode: { color: "#fff", fontSize: 15, fontWeight: "700", letterSpacing: 1 },
+  referralLink: { color: "#fff", fontSize: 12, fontWeight: "500", flex: 1, marginRight: 8, opacity: 0.9 },
   copyBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
   copyText: { color: "#fff", fontSize: 13, fontWeight: "500" },
 
-  inviteBtn: {
-    flexDirection: "row",
+  waIconBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(37,211,102,0.15)",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 10,
-    paddingVertical: 13,
   },
-  inviteBtnText: { fontSize: 15, fontWeight: "600" },
+
+  shareRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  shareIcon: {
+    flex: 1,
+    aspectRatio: 1,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+  },
+
+  followIconsRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+  },
+  followIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
   growStats: {
     flexDirection: "row",
