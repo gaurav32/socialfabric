@@ -53,9 +53,22 @@ async function firebaseSignInWithToken(idToken: string) {
   await signInWithCredential(auth, credential);
 }
 
+// ─── DEV BYPASS ───────────────────────────────────────────────────────────────
+// Set to true to skip all auth and go straight to the home screen.
+// Flip back to false when you're ready to re-enable login.
+const BYPASS_AUTH = true;
+// ──────────────────────────────────────────────────────────────────────────────
+
+const MOCK_USER = {
+  uid: "dev-user",
+  email: "dev@socialfabric.app",
+  displayName: "Dev User",
+  photoURL: null,
+} as unknown as User;
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(BYPASS_AUTH ? MOCK_USER : null);
+  const [loading, setLoading] = useState(!BYPASS_AUTH);
   const [error, setError] = useState<string | null>(null);
   const googlePendingRef = useRef(false);
 
@@ -63,6 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // "cancel" instead of "success" (e.g. Chrome dispatches an Android intent
   // and the Custom Tab closes before returning the URL to the JS layer).
   useEffect(() => {
+    if (BYPASS_AUTH) return;
     function handleUrl({ url }: { url: string }) {
       if (!googlePendingRef.current) return;
       if (!url.includes("google-callback")) return;
@@ -82,6 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (BYPASS_AUTH) return;
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       setLoading(false);
@@ -171,6 +186,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     setError(null);
+    if (BYPASS_AUTH) {
+      // In bypass mode just clear the mock user so AuthGate sends to login
+      setUser(null);
+      return;
+    }
     try {
       await signOut(auth);
     } catch (e: unknown) {
