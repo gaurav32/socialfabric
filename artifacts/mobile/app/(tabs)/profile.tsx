@@ -32,9 +32,9 @@ function Avatar({ name, size = 52 }: { name: string; size?: number }) {
       colors={["#7C6FF5", "#5B4FE8"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      style={[styles.avatar, { width: size, height: size, borderRadius: size / 2 }]}
+      style={[styles.avatar, { width: size, height: size, borderRadius: size * 0.26 }]}
     >
-      <Text style={[styles.avatarText, { color: "#fff", fontSize: size * 0.38 }]}>
+      <Text style={[styles.avatarText, { color: "#fff", fontSize: size * 0.36 }]}>
         {initials}
       </Text>
     </LinearGradient>
@@ -174,10 +174,11 @@ export default function ProfileScreen() {
           </View>
         </View>
         <Pressable
-          style={[styles.editBtn, { borderColor: colors.border }]}
-          onPress={() => {}}
+          style={styles.editLink}
+          onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
         >
-          <Text style={[styles.editBtnText, { color: colors.text }]}>Edit</Text>
+          <Text style={[styles.editLinkText, { color: colors.primary }]}>Edit</Text>
+          <Ionicons name="chevron-forward" size={13} color={colors.primary} />
         </Pressable>
       </Card>
 
@@ -327,13 +328,8 @@ const styles = StyleSheet.create({
   userName: { fontSize: 16, fontWeight: "700", marginBottom: 3 },
   emailRow: { flexDirection: "row", alignItems: "center" },
   userEmail: { fontSize: 12 },
-  editBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  editBtnText: { fontSize: 13, fontWeight: "600" },
+  editLink: { flexDirection: "row", alignItems: "center", gap: 1, paddingVertical: 4, paddingLeft: 8 },
+  editLinkText: { fontSize: 13, fontWeight: "600" },
 
   // Stats
   statsRow: { flexDirection: "row", gap: 10 },
