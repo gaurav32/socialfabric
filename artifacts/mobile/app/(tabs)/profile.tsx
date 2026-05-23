@@ -59,15 +59,6 @@ function Card({ children, style }: { children: React.ReactNode; style?: object }
   );
 }
 
-const ROW_ICON_GRADIENTS: Record<string, readonly [string, string]> = {
-  "shield-checkmark-outline": ["#5B4FE8", "#9B6BFF"],
-  "language-outline":         ["#1E6FD9", "#4C9BF5"],
-  "document-text-outline":    ["#4C9BF5", "#7BBFFF"],
-  "lock-closed-outline":      ["#5B4FE8", "#7C6FF5"],
-  "thumbs-up-outline":        ["#2D8A44", "#4CAF7D"],
-  "information-circle-outline": ["#6B6B99", "#9090CC"],
-};
-
 const DEFAULT_ICON_GRADIENT: readonly [string, string] = ["#7C6FF5", "#5B4FE8"];
 
 function RowItem({
@@ -88,7 +79,7 @@ function RowItem({
   isLast?: boolean;
 }) {
   const colors = useColors();
-  const gradient = ROW_ICON_GRADIENTS[icon] ?? DEFAULT_ICON_GRADIENT;
+  const gradient = DEFAULT_ICON_GRADIENT;
   return (
     <Pressable
       onPress={onPress}

@@ -6,6 +6,7 @@ import {
   FlatList,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -45,7 +46,7 @@ const MOCK_TASKS: Task[] = [
     dueDate: "Jun 10, 2025",
     coins: 80,
     icon: "cut-outline",
-    iconGradient: ["#FF6B9D", "#E91E8C"],
+    iconGradient: ["#7C6FF5", "#5B4FE8"],
   },
   {
     id: "2",
@@ -56,7 +57,7 @@ const MOCK_TASKS: Task[] = [
     dueDate: "Jun 15, 2025",
     coins: 120,
     icon: "bicycle-outline",
-    iconGradient: ["#5B8FFF", "#3461E8"],
+    iconGradient: ["#7C6FF5", "#5B4FE8"],
   },
   {
     id: "3",
@@ -67,7 +68,7 @@ const MOCK_TASKS: Task[] = [
     dueDate: "Jun 12, 2025",
     coins: 95,
     icon: "construct-outline",
-    iconGradient: ["#FF9D4C", "#E65100"],
+    iconGradient: ["#7C6FF5", "#5B4FE8"],
   },
   {
     id: "4",
@@ -78,7 +79,7 @@ const MOCK_TASKS: Task[] = [
     dueDate: "Jun 8, 2025",
     coins: 60,
     icon: "hammer-outline",
-    iconGradient: ["#4CAF7D", "#1B7A44"],
+    iconGradient: ["#7C6FF5", "#5B4FE8"],
   },
   {
     id: "5",
@@ -89,7 +90,7 @@ const MOCK_TASKS: Task[] = [
     dueDate: "Jun 9, 2025",
     coins: 150,
     icon: "snow-outline",
-    iconGradient: ["#4CC8EF", "#0097C7"],
+    iconGradient: ["#7C6FF5", "#5B4FE8"],
   },
   {
     id: "6",
@@ -100,7 +101,7 @@ const MOCK_TASKS: Task[] = [
     dueDate: "May 30, 2025",
     coins: 70,
     icon: "medkit-outline",
-    iconGradient: ["#9B6BFF", "#5B4FE8"],
+    iconGradient: ["#7C6FF5", "#5B4FE8"],
   },
   {
     id: "7",
@@ -111,7 +112,7 @@ const MOCK_TASKS: Task[] = [
     dueDate: "May 28, 2025",
     coins: 40,
     icon: "document-text-outline",
-    iconGradient: ["#FFC24C", "#E8960A"],
+    iconGradient: ["#7C6FF5", "#5B4FE8"],
   },
   {
     id: "8",
@@ -122,7 +123,7 @@ const MOCK_TASKS: Task[] = [
     dueDate: "May 25, 2025",
     coins: 55,
     icon: "body-outline",
-    iconGradient: ["#FF7BAF", "#D81B60"],
+    iconGradient: ["#7C6FF5", "#5B4FE8"],
   },
 ];
 
@@ -391,7 +392,11 @@ export default function TasksScreen() {
         <Text style={[styles.displayName, { color: colors.text }]}>{displayName} 👋</Text>
 
         {/* Filter tabs */}
-        <View style={styles.tabsRow}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabsRow}
+        >
           {TABS.map((tab) => {
             const count = countByStatus(tab.key);
             const isActive = activeTab === tab.key;
@@ -426,7 +431,7 @@ export default function TasksScreen() {
               </Pressable>
             );
           })}
-        </View>
+        </ScrollView>
       </LinearGradient>
 
       {/* ── Task list ── */}
@@ -467,7 +472,7 @@ const styles = StyleSheet.create({
   greeting: { fontSize: 13, marginBottom: 2 },
   displayName: { fontSize: 22, fontWeight: "700", marginBottom: 14 },
 
-  tabsRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
+  tabsRow: { flexDirection: "row", gap: 8, paddingRight: 16 },
   tabPill: {
     flexDirection: "row",
     alignItems: "center",
