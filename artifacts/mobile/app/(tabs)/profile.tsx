@@ -25,10 +25,6 @@ const REFERRAL_CODE = "FABRIC-ADI2025";
 const REFERRAL_LINK = `https://socialfabric.app/join?ref=${REFERRAL_CODE}`;
 
 const SOCIAL_SHARES = [
-  { key: "whatsapp", icon: "logo-whatsapp",  color: "#25D366", url: () => {
-    const msg = encodeURIComponent(`Join me on Social Fabric! Use my referral link: ${REFERRAL_LINK}`);
-    return Platform.OS === "web" ? `https://web.whatsapp.com/send?text=${msg}` : `https://wa.me/?text=${msg}`;
-  }},
   { key: "instagram", icon: "logo-instagram", color: "#E1306C", url: () => "https://www.instagram.com/" },
   { key: "twitter",   icon: "logo-twitter",   color: "#1DA1F2", url: () => {
     const msg = encodeURIComponent(`Join me on Social Fabric! ${REFERRAL_LINK}`);
@@ -43,13 +39,6 @@ const SOCIAL_SHARES = [
   },
 ] as const;
 
-const FOLLOW_US = [
-  { key: "instagram", icon: "logo-instagram", color: "#E1306C", url: "https://www.instagram.com/socialfabric" },
-  { key: "twitter",   icon: "logo-twitter",   color: "#1DA1F2", url: "https://twitter.com/socialfabric" },
-  { key: "facebook",  icon: "logo-facebook",  color: "#1877F2", url: "https://www.facebook.com/socialfabric" },
-  { key: "youtube",   icon: "logo-youtube",   color: "#FF0000", url: "https://www.youtube.com/@socialfabric" },
-  { key: "snapchat",  icon: "logo-snapchat",  color: "#FFFC00", url: "https://www.snapchat.com/add/socialfabric" },
-] as const;
 
 function Avatar({ name, size = 52 }: { name: string; size?: number }) {
   const initials = name
@@ -319,9 +308,9 @@ export default function ProfileScreen() {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 Linking.openURL(s.url());
               }}
-              style={[styles.shareIcon, { backgroundColor: s.color === "#FFFC00" ? s.color : `${s.color}22` }]}
+              style={[styles.shareIcon, { backgroundColor: "#fff" }]}
             >
-              <Ionicons name={s.icon as never} size={18} color={s.color === "#FFFC00" ? "#000" : s.color} />
+              <Ionicons name={s.icon as never} size={18} color={s.color} />
             </Pressable>
           ))}
         </View>
@@ -340,25 +329,6 @@ export default function ProfileScreen() {
           ))}
         </View>
       </View>
-
-      {/* ── Follow Us On ── */}
-      <SectionLabel label="Follow Us On" />
-      <Card>
-        <View style={styles.followIconsRow}>
-          {FOLLOW_US.map((s) => (
-            <Pressable
-              key={s.key}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                Linking.openURL(s.url);
-              }}
-              style={[styles.followIcon, { backgroundColor: s.color === "#FFFC00" ? s.color : `${s.color}18` }]}
-            >
-              <Ionicons name={s.icon as never} size={22} color={s.color === "#FFFC00" ? "#000" : s.color} />
-            </Pressable>
-          ))}
-        </View>
-      </Card>
 
       {/* ── Legal & Support ── */}
       <SectionLabel label="Legal & Support" />
