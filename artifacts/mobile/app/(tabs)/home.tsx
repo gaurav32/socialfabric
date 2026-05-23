@@ -17,19 +17,13 @@ import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import QuestionDetailSheet from "@/components/QuestionDetailSheet";
 import type { Question } from "@/components/QuestionDetailSheet";
+import CampaignDetailSheet from "@/components/CampaignDetailSheet";
+import type { Campaign } from "@/components/CampaignDetailSheet";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type HomeTab = "campaigns" | "askforhelp";
 
-interface Campaign {
-  id: string;
-  title: string;
-  description: string;
-  supporters: number;
-  daysLeft: number;
-  icon: string;
-}
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
@@ -66,27 +60,37 @@ const MOCK_QUESTIONS: Question[] = [
 const MOCK_CAMPAIGNS: Campaign[] = [
   {
     id: "1",
-    title: "Fix Potholes on Dwarka Expressway",
-    description: "Residents demanding urgent road repairs before monsoon season hits.",
-    supporters: 1240,
-    daysLeft: 8,
-    icon: "construct-outline",
+    title: "Clean & Facelift My Drain — Dwarka Sec 21",
+    location: "Dwarka, New Delhi",
+    icon: "water-outline",
+    status: "new",
+    completionPct: 0,
+    endDate: "Sep 30, 2025",
+    isNew: true,
+    communityCount: 54,
+    upiCode: "FABRIC-DWK21",
   },
   {
     id: "2",
-    title: "Plant 500 Trees in Sector 21 Park",
-    description: "Community green drive to restore the local park's tree cover.",
-    supporters: 876,
-    daysLeft: 14,
-    icon: "leaf-outline",
+    title: "Traffic Passway Dwarka Sector 21",
+    location: "Dwarka, New Delhi",
+    icon: "car-outline",
+    status: "joined",
+    completionPct: 67,
+    endDate: "Jun 12, 2025",
+    communityCount: 128,
+    upiCode: "FABRIC-DWK21",
   },
   {
     id: "3",
-    title: "Better Street Lighting in Koramangala",
-    description: "Petition for improved street lighting for safety after 9 PM.",
-    supporters: 2100,
-    daysLeft: 5,
-    icon: "bulb-outline",
+    title: "Traffic Passway Andheri Link Road",
+    location: "Andheri West, Mumbai",
+    icon: "car-outline",
+    status: "in_progress",
+    completionPct: 45,
+    endDate: "Jul 3, 2025",
+    communityCount: 128,
+    upiCode: "FABRIC-AND01",
   },
 ];
 
@@ -212,31 +216,105 @@ function QuestionCard({ item, onPress }: { item: Question; onPress: () => void }
   );
 }
 
-function CampaignCard({ item }: { item: Campaign }) {
+function CampaignCard({ item, onPress }: { item: Campaign; onPress: () => void }) {
   const colors = useColors();
+  const isNew = item.status === "new";
+  const isJoined = item.status === "joined";
+
+  const borderColor = isNew ? "#F59E0B" : colors.border;
+  const statusLabel = isNew ? "New Campaign" : isJoined ? "In Progress" : "In Progress";
+  const statusBg = isNew ? colors.secondary : "#DBEAFE";
+  const statusColor = isNew ? colors.mutedForeground : "#2563EB";
+
   return (
-    <View style={[styles.campaignCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <Pressable
+      style={({ pressed }) => [
+        styles.campaignCard,
+        {
+          backgroundColor: colors.card,
+          borderColor,
+          borderWidth: isNew ? 1.5 : 1,
+          opacity: pressed ? 0.88 : 1,
+        },
+      ]}
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        onPress();
+      }}
+    >
+      {/* "New in your area" banner */}
+      {isNew && (
+        <View style={styles.newBanner}>
+          <Ionicons name="sparkles" size={11} color="#F59E0B" />
+          <Text style={styles.newBannerText}>New in your area</Text>
+        </View>
+      )}
+
+      {/* Top row */}
       <View style={styles.campaignTop}>
         <GradientIcon name={item.icon} size={40} iconSize={18} />
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.campaignTitle, { color: colors.text }]}>{item.title}</Text>
-          <Text style={[styles.campaignDesc, { color: colors.mutedForeground }]} numberOfLines={2}>
-            {item.description}
-          </Text>
+        <View style={{ flex: 1, gap: 4 }}>
+          <View style={styles.campaignTitleRow}>
+            <Text style={[styles.campaignTitle, { color: colors.text, flex: 1 }]} numberOfLines={2}>
+              {item.title}
+            </Text>
+            {isJoined && (
+              <View style={styles.joinedBadge}>
+                <View style={styles.joinedDot} />
+                <Text style={styles.joinedBadgeText}>Joined</Text>
+              </View>
+            )}
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: statusBg }]}>
+            <Text style={[styles.statusBadgeText, { color: statusColor }]}>{statusLabel}</Text>
+          </View>
         </View>
       </View>
-      <View style={styles.campaignFooter}>
-        <View style={styles.campaignStat}>
-          <Ionicons name="people-outline" size={13} color={colors.primary} />
-          <Text style={[styles.campaignStatText, { color: colors.primary }]}>
-            {item.supporters.toLocaleString()} supporters
-          </Text>
+
+      {/* Completion */}
+      <View style={styles.completionSection}>
+        <View style={styles.completionRow}>
+          <Text style={[styles.completionLabel, { color: colors.mutedForeground }]}>COMPLETION</Text>
+          <Text style={[styles.completionPct, { color: colors.text }]}>{item.completionPct}%</Text>
         </View>
-        <View style={[styles.daysLeftBadge, { backgroundColor: colors.secondary }]}>
-          <Text style={[styles.daysLeftText, { color: colors.primary }]}>{item.daysLeft}d left</Text>
+        <View style={[styles.progressTrackCard, { backgroundColor: colors.secondary }]}>
+          {item.completionPct > 0 && (
+            <LinearGradient
+              colors={["#3B82F6", "#1D4ED8"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[styles.progressFillCard, { width: `${item.completionPct}%` }]}
+            />
+          )}
+        </View>
+        <View style={styles.cardMetaRow}>
+          <View style={styles.metaItem}>
+            <Ionicons name="location-outline" size={11} color={colors.mutedForeground} />
+            <Text style={[styles.metaText, { color: colors.mutedForeground }]}>{item.location}</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <Ionicons name="calendar-outline" size={11} color={colors.mutedForeground} />
+            <Text style={[styles.metaText, { color: colors.mutedForeground }]}>{item.endDate}</Text>
+          </View>
         </View>
       </View>
-    </View>
+
+      {/* CTA */}
+      {isNew ? (
+        <LinearGradient
+          colors={["#F59E0B", "#D97706"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.ctaBtn}
+        >
+          <Text style={styles.ctaBtnText}>Join Campaign →</Text>
+        </LinearGradient>
+      ) : (
+        <View style={[styles.ctaBtnOutline, { borderColor: colors.primary }]}>
+          <Text style={[styles.ctaBtnOutlineText, { color: colors.primary }]}>View Campaign</Text>
+        </View>
+      )}
+    </Pressable>
   );
 }
 
@@ -248,6 +326,7 @@ export default function HomeScreen() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<HomeTab>("askforhelp");
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
 
   const displayName = user?.displayName ?? user?.email?.split("@")[0] ?? "Changemaker";
 
@@ -352,21 +431,13 @@ export default function HomeScreen() {
         {/* ── Active Campaigns content ── */}
         {activeTab === "campaigns" && (
           <View style={styles.tabContent}>
-            <View style={styles.questionHeader}>
-              <Text style={[styles.questionCount, { color: colors.mutedForeground }]}>
-                {MOCK_CAMPAIGNS.length} campaigns
-              </Text>
-              <Pressable
-                style={[styles.askBtn, { backgroundColor: colors.primary }]}
-                onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}
-              >
-                <Ionicons name="add" size={16} color="#fff" style={{ marginRight: 4 }} />
-                <Text style={styles.askBtnText}>New Campaign</Text>
-              </Pressable>
+            <View style={styles.campaignHeader}>
+              <Text style={[styles.campaignHeading, { color: colors.text }]}>Active Campaigns</Text>
+              <Text style={[styles.nearYou, { color: colors.primary }]}>{MOCK_CAMPAIGNS.length} near you</Text>
             </View>
 
             {MOCK_CAMPAIGNS.map((c) => (
-              <CampaignCard key={c.id} item={c} />
+              <CampaignCard key={c.id} item={c} onPress={() => setSelectedCampaign(c)} />
             ))}
           </View>
         )}
@@ -376,6 +447,12 @@ export default function HomeScreen() {
       <QuestionDetailSheet
         question={selectedQuestion}
         onClose={() => setSelectedQuestion(null)}
+      />
+
+      {/* Campaign detail overlay */}
+      <CampaignDetailSheet
+        campaign={selectedCampaign}
+        onClose={() => setSelectedCampaign(null)}
       />
     </View>
   );
@@ -492,14 +569,38 @@ const styles = StyleSheet.create({
   locationText: { fontSize: 12 },
   repliesText: { fontSize: 13, fontWeight: "600" },
 
+  // Campaign section header
+  campaignHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  campaignHeading: { fontSize: 18, fontWeight: "800" },
+  nearYou: { fontSize: 13, fontWeight: "600" },
+
   // Campaign card
-  campaignCard: { borderRadius: 14, borderWidth: 1, padding: 14, gap: 10 },
+  campaignCard: { borderRadius: 16, padding: 14, gap: 12 },
   campaignTop: { flexDirection: "row", gap: 12, alignItems: "flex-start" },
-  campaignTitle: { fontSize: 14, fontWeight: "700", marginBottom: 3 },
-  campaignDesc: { fontSize: 13, lineHeight: 19 },
-  campaignFooter: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  campaignStat: { flexDirection: "row", alignItems: "center", gap: 5 },
-  campaignStatText: { fontSize: 13, fontWeight: "500" },
-  daysLeftBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  daysLeftText: { fontSize: 12, fontWeight: "600" },
+  campaignTitleRow: { flexDirection: "row", alignItems: "flex-start", gap: 6 },
+  campaignTitle: { fontSize: 14, fontWeight: "700", lineHeight: 20 },
+  newBanner: { flexDirection: "row", alignItems: "center", gap: 5 },
+  newBannerText: { fontSize: 12, fontWeight: "600", color: "#F59E0B" },
+  statusBadge: { alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  statusBadgeText: { fontSize: 12, fontWeight: "600" },
+  joinedBadge: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#DCFCE7", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  joinedDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#22C55E" },
+  joinedBadgeText: { fontSize: 12, fontWeight: "600", color: "#16A34A" },
+
+  // Completion in card
+  completionSection: { gap: 6 },
+  completionRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  completionLabel: { fontSize: 11, fontWeight: "700", letterSpacing: 0.6 },
+  completionPct: { fontSize: 14, fontWeight: "700" },
+  progressTrackCard: { height: 5, borderRadius: 3, overflow: "hidden" },
+  progressFillCard: { height: 5, borderRadius: 3 },
+  cardMetaRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 2 },
+  metaItem: { flexDirection: "row", alignItems: "center", gap: 3 },
+  metaText: { fontSize: 11 },
+
+  // CTA buttons in card
+  ctaBtn: { borderRadius: 12, paddingVertical: 13, alignItems: "center" },
+  ctaBtnText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+  ctaBtnOutline: { borderRadius: 12, borderWidth: 1, paddingVertical: 13, alignItems: "center" },
+  ctaBtnOutlineText: { fontSize: 15, fontWeight: "600" },
 });
