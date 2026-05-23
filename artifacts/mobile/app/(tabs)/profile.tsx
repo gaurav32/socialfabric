@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -20,7 +21,6 @@ import { useColors } from "@/hooks/useColors";
 const REFERRAL_CODE = "FABRIC-ADI2025";
 
 function Avatar({ name, size = 52 }: { name: string; size?: number }) {
-  const colors = useColors();
   const initials = name
     .split(" ")
     .map((w) => w[0])
@@ -28,21 +28,16 @@ function Avatar({ name, size = 52 }: { name: string; size?: number }) {
     .toUpperCase()
     .slice(0, 2);
   return (
-    <View
-      style={[
-        styles.avatar,
-        {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          backgroundColor: colors.secondary,
-        },
-      ]}
+    <LinearGradient
+      colors={["#7C6FF5", "#5B4FE8"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={[styles.avatar, { width: size, height: size, borderRadius: size / 2 }]}
     >
-      <Text style={[styles.avatarText, { color: colors.primary, fontSize: size * 0.38 }]}>
+      <Text style={[styles.avatarText, { color: "#fff", fontSize: size * 0.38 }]}>
         {initials}
       </Text>
-    </View>
+    </LinearGradient>
   );
 }
 
@@ -64,6 +59,17 @@ function Card({ children, style }: { children: React.ReactNode; style?: object }
   );
 }
 
+const ROW_ICON_GRADIENTS: Record<string, readonly [string, string]> = {
+  "shield-checkmark-outline": ["#5B4FE8", "#9B6BFF"],
+  "language-outline":         ["#1E6FD9", "#4C9BF5"],
+  "document-text-outline":    ["#4C9BF5", "#7BBFFF"],
+  "lock-closed-outline":      ["#5B4FE8", "#7C6FF5"],
+  "thumbs-up-outline":        ["#2D8A44", "#4CAF7D"],
+  "information-circle-outline": ["#6B6B99", "#9090CC"],
+};
+
+const DEFAULT_ICON_GRADIENT: readonly [string, string] = ["#7C6FF5", "#5B4FE8"];
+
 function RowItem({
   icon,
   label,
@@ -82,6 +88,7 @@ function RowItem({
   isLast?: boolean;
 }) {
   const colors = useColors();
+  const gradient = ROW_ICON_GRADIENTS[icon] ?? DEFAULT_ICON_GRADIENT;
   return (
     <Pressable
       onPress={onPress}
@@ -91,9 +98,14 @@ function RowItem({
         pressed && { opacity: 0.7 },
       ]}
     >
-      <View style={[styles.rowIcon, { backgroundColor: colors.secondary }]}>
-        <Ionicons name={icon as never} size={16} color={colors.primary} />
-      </View>
+      <LinearGradient
+        colors={gradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.rowIcon}
+      >
+        <Ionicons name={icon as never} size={15} color="#fff" />
+      </LinearGradient>
       <View style={styles.rowContent}>
         <Text style={[styles.rowLabel, { color: colors.text }]}>{label}</Text>
         {subtitle ? (

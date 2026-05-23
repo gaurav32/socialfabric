@@ -97,8 +97,15 @@ export default function HomeScreen() {
             <Text style={[styles.greeting, { color: colors.mutedForeground }]}>Welcome back,</Text>
             <Text style={[styles.displayName, { color: colors.foreground }]}>{displayName}</Text>
           </View>
-          <Pressable onPress={handleLogout} style={[styles.logoutBtn, { backgroundColor: colors.secondary, borderRadius: colors.radius }]}>
-            <Ionicons name="log-out-outline" size={20} color={colors.primary} />
+          <Pressable onPress={handleLogout}>
+            <LinearGradient
+              colors={[colors.primary, colors.accent]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.logoutBtn, { borderRadius: colors.radius }]}
+            >
+              <Ionicons name="log-out-outline" size={20} color="#fff" />
+            </LinearGradient>
           </Pressable>
         </View>
 

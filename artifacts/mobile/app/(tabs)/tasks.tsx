@@ -30,7 +30,7 @@ interface Task {
   dueDate: string;
   coins: number;
   icon: string;
-  iconBg: string;
+  iconGradient: readonly [string, string];
 }
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
@@ -44,8 +44,8 @@ const MOCK_TASKS: Task[] = [
     location: "Dwarka Sec 21, New Delhi",
     dueDate: "Jun 10, 2025",
     coins: 80,
-    icon: "✂️",
-    iconBg: "#FFE4E4",
+    icon: "cut-outline",
+    iconGradient: ["#FF6B9D", "#E91E8C"],
   },
   {
     id: "2",
@@ -55,8 +55,8 @@ const MOCK_TASKS: Task[] = [
     location: "Dwarka Sec 21, New Delhi",
     dueDate: "Jun 15, 2025",
     coins: 120,
-    icon: "🚲",
-    iconBg: "#E4F0FF",
+    icon: "bicycle-outline",
+    iconGradient: ["#5B8FFF", "#3461E8"],
   },
   {
     id: "3",
@@ -66,8 +66,8 @@ const MOCK_TASKS: Task[] = [
     location: "Dwarka, New Delhi",
     dueDate: "Jun 12, 2025",
     coins: 95,
-    icon: "⚙️",
-    iconBg: "#FFF4E4",
+    icon: "construct-outline",
+    iconGradient: ["#FF9D4C", "#E65100"],
   },
   {
     id: "4",
@@ -77,8 +77,8 @@ const MOCK_TASKS: Task[] = [
     location: "Rohini, New Delhi",
     dueDate: "Jun 8, 2025",
     coins: 60,
-    icon: "🔧",
-    iconBg: "#E4FFE9",
+    icon: "hammer-outline",
+    iconGradient: ["#4CAF7D", "#1B7A44"],
   },
   {
     id: "5",
@@ -88,8 +88,8 @@ const MOCK_TASKS: Task[] = [
     location: "Janakpuri, New Delhi",
     dueDate: "Jun 9, 2025",
     coins: 150,
-    icon: "❄️",
-    iconBg: "#E4F8FF",
+    icon: "snow-outline",
+    iconGradient: ["#4CC8EF", "#0097C7"],
   },
   {
     id: "6",
@@ -99,8 +99,8 @@ const MOCK_TASKS: Task[] = [
     location: "Dwarka Sec 10, New Delhi",
     dueDate: "May 30, 2025",
     coins: 70,
-    icon: "🦷",
-    iconBg: "#F0E4FF",
+    icon: "medkit-outline",
+    iconGradient: ["#9B6BFF", "#5B4FE8"],
   },
   {
     id: "7",
@@ -110,8 +110,8 @@ const MOCK_TASKS: Task[] = [
     location: "Dwarka, New Delhi",
     dueDate: "May 28, 2025",
     coins: 40,
-    icon: "📋",
-    iconBg: "#FFF9E4",
+    icon: "document-text-outline",
+    iconGradient: ["#FFC24C", "#E8960A"],
   },
   {
     id: "8",
@@ -121,8 +121,8 @@ const MOCK_TASKS: Task[] = [
     location: "Palam, New Delhi",
     dueDate: "May 25, 2025",
     coins: 55,
-    icon: "🧘",
-    iconBg: "#FFE4F5",
+    icon: "body-outline",
+    iconGradient: ["#FF7BAF", "#D81B60"],
   },
 ];
 
@@ -137,8 +137,8 @@ const TABS: { key: TaskStatus; label: string }[] = [
 
 const CATEGORY_COLORS: Record<TaskType, { bg: string; text: string }> = {
   recommendation: { bg: "#EEF0FF", text: "#5B4FE8" },
-  bid: { bg: "#E4F0FF", text: "#1E6FD9" },
-  survey: { bg: "#F0FFE4", text: "#2D8A44" },
+  bid: { bg: "#E8F0FF", text: "#3461E8" },
+  survey: { bg: "#FFF4E0", text: "#B86A00" },
 };
 
 const CATEGORY_LABELS: Record<TaskType, string> = {
@@ -146,6 +146,47 @@ const CATEGORY_LABELS: Record<TaskType, string> = {
   bid: "Bid",
   survey: "Survey",
 };
+
+// ─── Gradient Icon ────────────────────────────────────────────────────────────
+
+function GradientIcon({
+  name,
+  gradient,
+  size = 44,
+  iconSize = 20,
+}: {
+  name: string;
+  gradient: readonly [string, string];
+  size?: number;
+  iconSize?: number;
+}) {
+  return (
+    <LinearGradient
+      colors={gradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={[styles.gradientIcon, { width: size, height: size, borderRadius: size * 0.28 }]}
+    >
+      <Ionicons name={name as never} size={iconSize} color="#fff" />
+    </LinearGradient>
+  );
+}
+
+// ─── Coin Badge ───────────────────────────────────────────────────────────────
+
+function CoinBadge({ amount }: { amount: number }) {
+  return (
+    <LinearGradient
+      colors={["#FFD700", "#F59E0B"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.coinBadge}
+    >
+      <Ionicons name="star" size={11} color="#fff" style={{ marginRight: 3 }} />
+      <Text style={styles.coinBadgeText}>+{amount}</Text>
+    </LinearGradient>
+  );
+}
 
 // ─── Task Card ────────────────────────────────────────────────────────────────
 
@@ -177,15 +218,13 @@ function TaskCard({
         {
           backgroundColor: colors.card,
           borderColor: colors.border,
-          opacity: isFailed ? 0.7 : 1,
+          opacity: isFailed ? 0.65 : 1,
         },
       ]}
     >
       {/* Top row: icon + title + bookmark */}
       <View style={styles.cardTop}>
-        <View style={[styles.taskIcon, { backgroundColor: task.iconBg }]}>
-          <Text style={styles.taskIconEmoji}>{task.icon}</Text>
-        </View>
+        <GradientIcon name={task.icon} gradient={task.iconGradient} />
         <View style={styles.taskTitleWrap}>
           <Text style={[styles.taskTitle, { color: colors.text }]} numberOfLines={2}>
             {task.title}
@@ -211,37 +250,41 @@ function TaskCard({
         </Pressable>
       </View>
 
-      {/* Meta: location + due date */}
-      <View style={styles.metaRow}>
-        <View style={styles.metaItem}>
-          <Ionicons name="location-outline" size={12} color={colors.mutedForeground} />
-          <Text style={[styles.metaText, { color: colors.mutedForeground }]}>{task.location}</Text>
+      {/* Meta + coins row */}
+      <View style={styles.metaCoinsRow}>
+        <View style={styles.metaCol}>
+          <View style={styles.metaItem}>
+            <Ionicons name="location-outline" size={12} color={colors.mutedForeground} />
+            <Text style={[styles.metaText, { color: colors.mutedForeground }]}>{task.location}</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <Ionicons name="time-outline" size={12} color={colors.mutedForeground} />
+            <Text style={[styles.metaText, { color: colors.mutedForeground }]}>Due {task.dueDate}</Text>
+          </View>
         </View>
-        <View style={styles.metaItem}>
-          <Ionicons name="time-outline" size={12} color={colors.mutedForeground} />
-          <Text style={[styles.metaText, { color: colors.mutedForeground }]}>Due {task.dueDate}</Text>
-        </View>
-      </View>
-
-      {/* Coins */}
-      <View style={styles.coinsRow}>
-        <Text style={styles.coinEmoji}>🪙</Text>
-        <Text style={[styles.coinsText, { color: "#D97706" }]}>+{task.coins}</Text>
+        <CoinBadge amount={task.coins} />
       </View>
 
       {/* Action row — only for active / accepted */}
       {(isActive || isAccepted) && (
         <View style={styles.actionRow}>
-          <Pressable
-            style={[styles.acceptBtn, { backgroundColor: colors.primary }]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              onAccept(task.id);
-            }}
+          <LinearGradient
+            colors={[colors.primary, colors.accent]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.acceptBtnGradient}
           >
-            <Ionicons name="checkmark-circle-outline" size={15} color="#fff" style={{ marginRight: 5 }} />
-            <Text style={styles.acceptBtnText}>Accept Task</Text>
-          </Pressable>
+            <Pressable
+              style={styles.acceptBtnInner}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                onAccept(task.id);
+              }}
+            >
+              <Ionicons name="checkmark-circle" size={15} color="#fff" style={{ marginRight: 5 }} />
+              <Text style={styles.acceptBtnText}>Accept Task</Text>
+            </Pressable>
+          </LinearGradient>
 
           {task.type === "recommendation" && (
             <Pressable
@@ -251,7 +294,14 @@ function TaskCard({
                 onWhatsApp(task.id);
               }}
             >
-              <Text style={styles.whatsappIcon}>💬</Text>
+              <LinearGradient
+                colors={["#25D366", "#128C7E"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.whatsappGradient}
+              >
+                <Ionicons name="logo-whatsapp" size={18} color="#fff" />
+              </LinearGradient>
             </Pressable>
           )}
 
@@ -285,9 +335,7 @@ function TaskCard({
       {(isCompleted || isFailed) && (
         <View style={[
           styles.statusPill,
-          {
-            backgroundColor: isCompleted ? "#E4FFE9" : "#FFE4E4",
-          },
+          { backgroundColor: isCompleted ? "#E4FFE9" : "#FFE4E4" },
         ]}>
           <Ionicons
             name={isCompleted ? "checkmark-circle" : "close-circle"}
@@ -314,47 +362,33 @@ export default function TasksScreen() {
   const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS);
 
   const displayName = user?.displayName ?? "Dev User";
-  const firstName = displayName.split(" ")[0];
 
-  const getHour = () => new Date().getHours();
-  const greeting =
-    getHour() < 12 ? "Good morning," : getHour() < 17 ? "Good afternoon," : "Good evening,";
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning," : hour < 17 ? "Good afternoon," : "Good evening,";
 
   const countByStatus = (s: TaskStatus) => tasks.filter((t) => t.status === s).length;
   const filtered = tasks.filter((t) => t.status === activeTab);
 
-  const handleAccept = (id: string) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, status: "accepted" as TaskStatus } : t))
-    );
-  };
+  const handleAccept = (id: string) =>
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status: "accepted" as TaskStatus } : t)));
 
-  const handleReject = (id: string) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, status: "failed" as TaskStatus } : t))
-    );
-  };
+  const handleReject = (id: string) =>
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status: "failed" as TaskStatus } : t)));
 
-  const handleWhatsApp = (_id: string) => {
-    // In production: open WhatsApp deep link
-  };
+  const handleWhatsApp = (_id: string) => {};
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      {/* ── Header gradient ── */}
+      {/* ── Header ── */}
       <LinearGradient
         colors={[colors.heroGradientStart, colors.background]}
         style={[
           styles.header,
-          {
-            paddingTop: insets.top + (Platform.OS === "web" ? 67 : 0) + 16,
-          },
+          { paddingTop: insets.top + (Platform.OS === "web" ? 67 : 0) + 16 },
         ]}
       >
         <Text style={[styles.greeting, { color: colors.mutedForeground }]}>{greeting}</Text>
-        <Text style={[styles.displayName, { color: colors.text }]}>
-          {displayName} 👋
-        </Text>
+        <Text style={[styles.displayName, { color: colors.text }]}>{displayName} 👋</Text>
 
         {/* Filter tabs */}
         <View style={styles.tabsRow}>
@@ -376,31 +410,15 @@ export default function TasksScreen() {
                   },
                 ]}
               >
-                <Text
-                  style={[
-                    styles.tabLabel,
-                    { color: isActive ? "#fff" : colors.mutedForeground },
-                  ]}
-                >
+                <Text style={[styles.tabLabel, { color: isActive ? "#fff" : colors.mutedForeground }]}>
                   {tab.label}
                 </Text>
                 {count > 0 && (
-                  <View
-                    style={[
-                      styles.tabCount,
-                      {
-                        backgroundColor: isActive
-                          ? "rgba(255,255,255,0.25)"
-                          : colors.secondary,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.tabCountText,
-                        { color: isActive ? "#fff" : colors.primary },
-                      ]}
-                    >
+                  <View style={[
+                    styles.tabCount,
+                    { backgroundColor: isActive ? "rgba(255,255,255,0.25)" : colors.secondary },
+                  ]}>
+                    <Text style={[styles.tabCountText, { color: isActive ? "#fff" : colors.primary }]}>
                       {count}
                     </Text>
                   </View>
@@ -415,10 +433,7 @@ export default function TasksScreen() {
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={[
-          styles.listContent,
-          { paddingBottom: insets.bottom + 24 },
-        ]}
+        contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
           <TaskCard
@@ -430,7 +445,9 @@ export default function TasksScreen() {
         )}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Ionicons name="checkbox-outline" size={48} color={colors.mutedForeground} />
+            <LinearGradient colors={["#E8E6FF", "#C8C3FF"]} style={styles.emptyIconWrap}>
+              <Ionicons name="checkbox-outline" size={32} color="#5B4FE8" />
+            </LinearGradient>
             <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
               No {activeTab} tasks
             </Text>
@@ -446,18 +463,11 @@ export default function TasksScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
 
-  header: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
+  header: { paddingHorizontal: 16, paddingBottom: 16 },
   greeting: { fontSize: 13, marginBottom: 2 },
   displayName: { fontSize: 22, fontWeight: "700", marginBottom: 14 },
 
-  tabsRow: {
-    flexDirection: "row",
-    gap: 8,
-    flexWrap: "wrap",
-  },
+  tabsRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
   tabPill: {
     flexDirection: "row",
     alignItems: "center",
@@ -480,72 +490,49 @@ const styles = StyleSheet.create({
 
   listContent: { paddingHorizontal: 16, paddingTop: 12, gap: 12 },
 
-  // Task card
-  card: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 14,
-    gap: 10,
-  },
-  cardTop: {
+  // Gradient icon
+  gradientIcon: { alignItems: "center", justifyContent: "center" },
+
+  // Coin badge
+  coinBadge: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-  },
-  taskIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
     alignItems: "center",
-    justifyContent: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
   },
-  taskIconEmoji: { fontSize: 20 },
+  coinBadgeText: { color: "#fff", fontSize: 13, fontWeight: "700" },
+
+  // Task card
+  card: { borderRadius: 16, borderWidth: 1, padding: 14, gap: 10 },
+  cardTop: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
   taskTitleWrap: { flex: 1, gap: 5 },
   taskTitle: { fontSize: 14, fontWeight: "600", lineHeight: 19 },
-  categoryBadge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
+  categoryBadge: { alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   categoryText: { fontSize: 11, fontWeight: "600" },
 
-  metaRow: { gap: 4 },
+  metaCoinsRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" },
+  metaCol: { gap: 4, flex: 1, marginRight: 8 },
   metaItem: { flexDirection: "row", alignItems: "center", gap: 4 },
   metaText: { fontSize: 12 },
 
-  coinsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  coinEmoji: { fontSize: 14 },
-  coinsText: { fontSize: 14, fontWeight: "700" },
-
-  actionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    flexWrap: "wrap",
-  },
-  acceptBtn: {
+  actionRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
+  acceptBtnGradient: { borderRadius: 10 },
+  acceptBtnInner: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 14,
     paddingVertical: 9,
-    borderRadius: 10,
   },
   acceptBtnText: { color: "#fff", fontSize: 13, fontWeight: "600" },
 
-  whatsappBtn: {
+  whatsappBtn: { borderRadius: 10, overflow: "hidden" },
+  whatsappGradient: {
     width: 36,
     height: 36,
-    borderRadius: 10,
-    backgroundColor: "#25D366",
     alignItems: "center",
     justifyContent: "center",
   },
-  whatsappIcon: { fontSize: 18 },
 
   bidInput: {
     flex: 1,
@@ -578,11 +565,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
 
-  emptyState: {
+  emptyState: { alignItems: "center", justifyContent: "center", gap: 14, paddingTop: 60 },
+  emptyIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    gap: 12,
-    paddingTop: 60,
   },
   emptyText: { fontSize: 16 },
 });
