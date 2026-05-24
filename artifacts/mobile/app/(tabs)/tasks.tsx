@@ -274,18 +274,30 @@ function TaskCard({
 export default function TasksScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<TaskStatus>("active");
   const [statusOverrides, setStatusOverrides] = useState<Record<string, TaskStatus>>({});
 
   const { mutate: patchTask } = useUpdateTask();
 
-  const { data: rawTasks = [] } = useQuery({
+  const { data: rawTasks = [], isError, error } = useQuery({
     queryKey: ["tasks"],
-    queryFn: () => fetchWithCache("tasks", getTasks),
+    enabled: !!user && !authLoading,
+    queryFn: async () => {
+      const result = await fetchWithCache("tasks", getTasks);
+      if (!Array.isArray(result)) {
+        console.warn("Tasks fetch returned non-array payload", result);
+        return [];
+      }
+      return result;
+    },
   });
 
-  const tasks: Task[] = rawTasks.map((t) => ({
+  if (isError) {
+    console.error("Tasks query error:", error);
+  }
+
+  const tasks: Task[] = (Array.isArray(rawTasks) ? rawTasks : []).map((t) => ({
     id: t.id,
     title: t.title,
     type: (t.type as TaskType) ?? "recommendation",

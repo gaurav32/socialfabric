@@ -56,7 +56,7 @@ async function firebaseSignInWithToken(idToken: string) {
 // ─── DEV BYPASS ───────────────────────────────────────────────────────────────
 // Set to true to skip all auth and go straight to the home screen.
 // Flip back to false when you're ready to re-enable login.
-const BYPASS_AUTH = true;
+const BYPASS_AUTH = false;
 // ──────────────────────────────────────────────────────────────────────────────
 
 const MOCK_USER = {

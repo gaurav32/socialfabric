@@ -15,14 +15,29 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { AuthProvider } from "@/context/AuthContext";
-import { setBaseUrl } from "@workspace/api-client-react";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { setBaseUrl, setAuthTokenGetter } from "@workspace/api-client-react";
 
 // Point the API client at the shared reverse-proxy domain.
 // EXPO_PUBLIC_API_URL is set at env level (unlike EXPO_PUBLIC_DOMAIN).
 const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 if (apiUrl) {
   setBaseUrl(apiUrl);
+}
+
+function AuthTokenSetup({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+
+  useEffect(() => {
+    setAuthTokenGetter(async () => {
+      if (user) {
+        return await user.getIdToken();
+      }
+      return null;
+    });
+  }, [user]);
+
+  return <>{children}</>;
 }
 
 SplashScreen.preventAutoHideAsync();
@@ -81,7 +96,9 @@ export default function RootLayout() {
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
               <AuthProvider>
-                <RootLayoutNav />
+                <AuthTokenSetup>
+                  <RootLayoutNav />
+                </AuthTokenSetup>
               </AuthProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
