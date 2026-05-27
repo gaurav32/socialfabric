@@ -16,6 +16,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { auth } from "@/lib/firebase";
 import { setBaseUrl, setAuthTokenGetter } from "@workspace/api-client-react";
 
 // Point the API client at the shared reverse-proxy domain.
@@ -30,8 +31,11 @@ function AuthTokenSetup({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setAuthTokenGetter(async () => {
-      if (user) {
-        return await user.getIdToken();
+      if (user && typeof (user as any).getIdToken === "function") {
+        return await (user as any).getIdToken();
+      }
+      if (auth.currentUser && typeof (auth.currentUser as any).getIdToken === "function") {
+        return await (auth.currentUser as any).getIdToken();
       }
       return null;
     });
