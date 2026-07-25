@@ -1,0 +1,18 @@
+$ export NODE_ENV=development && pnpm run build && pnpm run start
+$ node ./build.mjs
+
+  dist/index.mjs                       2.2mb ⚠️
+  dist/pino-worker.mjs               153.4kb
+  dist/pino-file.mjs                 142.1kb
+  dist/pino-pretty.mjs               114.6kb
+  dist/thread-stream-worker.mjs        7.3kb
+  dist/index.mjs.map                   3.7mb
+  dist/pino-worker.mjs.map           256.9kb
+  dist/pino-file.mjs.map             229.1kb
+  dist/pino-pretty.mjs.map           203.9kb
+  dist/thread-stream-worker.mjs.map   12.0kb
+
+⚡ Done in 2542ms
+$ node --enable-source-maps ./dist/index.mjs
+[13:56:31.644] [32mINFO[39m (962663): [36mServer listening[39m
+    [35mport[39m: 3000

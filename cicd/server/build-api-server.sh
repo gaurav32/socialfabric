@@ -3,8 +3,8 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$script_dir/.." && pwd)"
-out_dir="$script_dir/server-build"
-archive_path="$out_dir/socialfabric-api-server-artifact.zip"
+out_dir="$script_dir"
+archive_path="$out_dir/deploy/lib/socialfabric-api-server-artifact.zip"
 staging_dir="$out_dir/staging"
 
 mkdir -p "$out_dir" "$staging_dir"

@@ -48,7 +48,7 @@ case "${1:-status}" in
     echo "Starting API server in background, logs: $log_file"
     cd "$repo_root"
     nohup \
-      EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID="$EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID" \
+      GOOGLE_OAUTH_CLIENT_ID="$GOOGLE_OAUTH_CLIENT_ID" \
       GOOGLE_OAUTH_CLIENT_SECRET="$GOOGLE_OAUTH_CLIENT_SECRET" \
       GOOGLE_OAUTH_CALLBACK_URL="$GOOGLE_OAUTH_CALLBACK_URL" \
       PORT=3000 \

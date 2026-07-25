@@ -3,13 +3,23 @@ import { google } from "googleapis";
 
 const router: IRouter = Router();
 
+// The mobile app's real identity (artifacts/mobile/app.json `android.package`).
+// Not secret, so a working default is baked in; override via env if a second
+// app flavor/package ever ships. iOS needs no equivalent: it resolves custom
+// URL schemes purely by the scheme string itself, with no package/bundle-id
+// argument in the redirect URL, so `finalUrl` alone is sufficient there.
+const ANDROID_PACKAGE_NAME = process.env["ANDROID_PACKAGE_NAME"] ?? "com.socialfabric.mobile";
+const ANDROID_PACKAGE_FALLBACK_URL =
+  process.env["ANDROID_PACKAGE_FALLBACK_URL"] ??
+  `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE_NAME}`;
+
 function getOAuthClient() {
-  const clientId = process.env["EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID"];
+  const clientId = process.env["GOOGLE_OAUTH_CLIENT_ID"];
   const clientSecret = process.env["GOOGLE_OAUTH_CLIENT_SECRET"];
   const callbackUrl = process.env["GOOGLE_OAUTH_CALLBACK_URL"];
 
   if (!clientId || !clientSecret) {
-    throw new Error("Missing EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID or GOOGLE_OAUTH_CLIENT_SECRET");
+    throw new Error("Missing GOOGLE_OAUTH_CLIENT_ID or GOOGLE_OAUTH_CLIENT_SECRET");
   }
   if (!callbackUrl) {
     throw new Error("Missing GOOGLE_OAUTH_CALLBACK_URL");
@@ -52,7 +62,9 @@ router.get("/auth/google/start", (req, res) => {
  * GET /api/auth/google/callback
  *
  * Google redirects here after the user consents. We exchange the code for
- * tokens, pull out the id_token, and deep-link back into the app with it.
+ * tokens, pull out the id_token, and hand it back to whatever initiated the
+ * flow — a plain HTTP(S) redirect for web, or a deep link back into the
+ * native app for Android/iOS.
  */
 router.get("/auth/google/callback", async (req, res) => {
   try {
@@ -80,34 +92,50 @@ router.get("/auth/google/callback", async (req, res) => {
     if (!idToken) {
       throw new Error("No id_token in Google token response");
     }
-
+    req.log.info({ appRedirectUri }, "Received appRedirectUri");
     if (appRedirectUri) {
       const separator = appRedirectUri.includes("?") ? "&" : "?";
       const finalUrl = `${appRedirectUri}${separator}id_token=${encodeURIComponent(idToken)}`;
       req.log.info({ finalUrl }, "Redirecting back to app");
 
-      // Parse the exp:// URL to build an Android intent:// URL.
-      // intent:// is handled natively by Chrome/Android and opens the target
-      // app without requiring a user gesture (unlike window.location = "exp://").
-      // Format: intent://<host>/<path>#Intent;scheme=<scheme>;package=<pkg>;end
-      let intentUrl = finalUrl;
-      try {
-        const parsed = new URL(finalUrl);
-        const host = parsed.host;           // e.g. xxx.expo.pike.replit.dev
-        const pathAndQuery = parsed.pathname + parsed.search; // /--/auth/google-callback?id_token=...
-        const scheme = parsed.protocol.replace(":", ""); // "exp"
-        // Expo Go's Android package name
-        const pkg = "host.exp.exponent";
-        const fallback = encodeURIComponent("https://expo.dev/go");
-        intentUrl =
-          `intent://${host}${pathAndQuery}` +
-          `#Intent;scheme=${scheme};package=${pkg};` +
-          `S.browser_fallback_url=${fallback};end`;
-      } catch {
-        // Fallback: use raw finalUrl (works if it's not exp://)
-        intentUrl = finalUrl;
+      const scheme = new URL(finalUrl).protocol.replace(":", "");
+      const isWebRedirect = scheme === "http" || scheme === "https";
+
+      if (isWebRedirect) {
+        // Web (or any http(s) universal link): there's no native app to
+        // bounce into, so a plain redirect is all that's needed.
+        res.redirect(finalUrl);
+        return;
       }
 
+      // Native app via a custom URL scheme (e.g. "mobile://..." from
+      // artifacts/mobile/app.json `expo.scheme`).
+      //
+      // Android: Chrome requires a user gesture to navigate JS to a custom
+      // scheme, but will follow an intent:// URL without one — so we try
+      // that first, addressed to the app's real package name. This is
+      // gated to actual Android user agents since intent:// isn't a scheme
+      // iOS/desktop browsers understand.
+      //
+      // iOS: no such mechanism exists or is needed — Safari (and
+      // ASWebAuthenticationSession, which openAuthSessionAsync uses under
+      // the hood on iOS) resolves a custom scheme purely by the scheme
+      // string and follows `finalUrl` directly.
+      const userAgent = req.headers["user-agent"] ?? "";
+      const isAndroid = /Android/i.test(userAgent);
+
+      let intentUrl: string | null = null;
+      if (isAndroid) {
+        const parsed = new URL(finalUrl);
+        const host = parsed.host;
+        const pathAndQuery = parsed.pathname + parsed.search;
+        const fallback = encodeURIComponent(ANDROID_PACKAGE_FALLBACK_URL);
+        intentUrl =
+          `intent://${host}${pathAndQuery}` +
+          `#Intent;scheme=${scheme};package=${ANDROID_PACKAGE_NAME};` +
+          `S.browser_fallback_url=${fallback};end`;
+      }
+      req.log.info({ intentUrl, finalUrl }, "Deep-linking back to native app");
       res.send(`<!DOCTYPE html>
 <html>
 <head>
@@ -127,11 +155,11 @@ router.get("/auth/google/callback", async (req, res) => {
 <body>
 <h2>✓ Signed in with Google</h2>
 <p>Opening Social Fabric…</p>
-<a class="btn" href="${intentUrl}">Open App</a>
+<a class="btn" href="${finalUrl}">Open App</a>
 <script>
-  // intent:// opens Expo Go directly on Android without a user gesture.
-  // Also try the raw exp:// URL as a fallback after a short delay.
-  try { window.location.replace(${JSON.stringify(intentUrl)}); } catch(e){}
+  // Android: try the intent:// URL first, opens the app with no gesture.
+  ${intentUrl ? `try { window.location.replace(${JSON.stringify(intentUrl)}); } catch(e){}` : ""}
+  // iOS, and Android if the intent:// attempt above didn't fire.
   setTimeout(function(){
     try { window.location.replace(${JSON.stringify(finalUrl)}); } catch(e){}
   }, 800);
@@ -151,6 +179,8 @@ router.get("/auth/google/callback", async (req, res) => {
     } else {
       res.status(500).json({ error: msg });
     }
+  } finally {
+    req.log.info({ url: req.originalUrl }, "auth/google/callback finished");
   }
 });
 

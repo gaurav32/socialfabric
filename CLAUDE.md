@@ -99,6 +99,6 @@ The root layout (`app/_layout.tsx`) sets up providers in order: `SafeAreaProvide
 | `DATABASE_URL` | `lib/db` | PostgreSQL connection string |
 | `BYPASS_AUTH` | `api-server` | Skip auth check, use `"dev-user"` |
 | `EXPO_PUBLIC_API_URL` | `mobile` | Base URL for API calls |
-| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | `api-server` + `mobile` | Google OAuth client ID |
+| `GOOGLE_OAUTH_CLIENT_ID` | `api-server` | Google OAuth client ID |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | `api-server` | Google OAuth secret |
 | `GOOGLE_OAUTH_CALLBACK_URL` | `api-server` | OAuth redirect URL registered with Google |
