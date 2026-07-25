@@ -12,7 +12,7 @@ $ node ./build.mjs
   dist/pino-pretty.mjs.map           203.9kb
   dist/thread-stream-worker.mjs.map   12.0kb
 
-⚡ Done in 2542ms
+⚡ Done in 9371ms
 $ node --enable-source-maps ./dist/index.mjs
-[13:56:31.644] [32mINFO[39m (962663): [36mServer listening[39m
+[14:42:39.643] [32mINFO[39m (991505): [36mServer listening[39m
     [35mport[39m: 3000

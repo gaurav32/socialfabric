@@ -2,9 +2,9 @@
 set -euo pipefail
 
 container_name="socialfabric-api"
-compose_file="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/docker-compose.yml"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-repo_root="$(cd "$script_dir/.." && pwd)"
+repo_root="$(cd "$script_dir/../.." && pwd)"
+compose_file="$repo_root/artifacts/api-server/docker-compose.yml"
 pid_file="$script_dir/socialfabric-api.pid"
 log_file="$script_dir/socialfabric-api.log"
 

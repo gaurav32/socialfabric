@@ -2,7 +2,7 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-repo_root="$(cd "$script_dir/.." && pwd)"
+repo_root="$(cd "$script_dir/../.." && pwd)"
 out_dir="$script_dir"
 archive_path="$out_dir/deploy/lib/socialfabric-api-server-artifact.zip"
 staging_dir="$out_dir/staging"
@@ -20,7 +20,7 @@ copy_if_exists() {
 
 # Copy the files needed to build and run the server on a remote host.
 copy_if_exists "$repo_root/artifacts/api-server/Dockerfile" "$staging_dir/"
-copy_if_exists "$repo_root/docker-compose.yml" "$staging_dir/"
+copy_if_exists "$repo_root/artifacts/api-server/docker-compose.yml" "$staging_dir/"
 copy_if_exists "$repo_root/artifacts/api-server/package.json" "$staging_dir/"
 copy_if_exists "$repo_root/artifacts/api-server/build.mjs" "$staging_dir/"
 copy_if_exists "$repo_root/artifacts/api-server/tsconfig.json" "$staging_dir/"

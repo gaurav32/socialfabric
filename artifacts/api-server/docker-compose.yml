@@ -1,7 +1,7 @@
 services:
   api-server:
     build:
-      context: .
+      context: ../..
       dockerfile: artifacts/api-server/Dockerfile
     container_name: socialfabric-api
     ports:
