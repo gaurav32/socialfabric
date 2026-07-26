@@ -6,7 +6,7 @@ import { requireUser, type AuthenticatedRequest } from "../middleware/auth";
 const router: IRouter = Router();
 
 router.get("/profile", requireUser, async (req, res) => {
-  const { userId } = req as AuthenticatedRequest;
+  const { userId, userEmail, userDisplayName } = req as AuthenticatedRequest;
   try {
     let rows = await db
       .select()
@@ -18,8 +18,8 @@ router.get("/profile", requireUser, async (req, res) => {
       const shortId = userId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 6).toUpperCase();
       await db.insert(profilesTable).values({
         userId,
-        displayName: "Dev User",
-        email: "dev@socialfabric.app",
+        displayName: userDisplayName ?? "New User",
+        email: userEmail ?? "",
         referralCode: `FABRIC-${shortId || "ADI202"}`,
         socialScore: 720,
         coins: 200,

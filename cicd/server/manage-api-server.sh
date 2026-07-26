@@ -52,7 +52,7 @@ case "${1:-status}" in
       GOOGLE_OAUTH_CLIENT_SECRET="$GOOGLE_OAUTH_CLIENT_SECRET" \
       GOOGLE_OAUTH_CALLBACK_URL="$GOOGLE_OAUTH_CALLBACK_URL" \
       PORT=3000 \
-      DATABASE_URL="postgres://postgres:postgres@localhost:5432/social_fabric_db" \
+      DATABASE_URL="postgres://postgres:postgres@localhost:5432/social_fabric" \
       pnpm --filter @workspace/api-server run dev > "$log_file" 2>&1 &
     echo $! > "$pid_file"
     echo "Started (pid $(cat "$pid_file"))"

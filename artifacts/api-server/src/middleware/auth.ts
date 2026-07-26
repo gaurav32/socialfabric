@@ -3,6 +3,8 @@ import { getFirebaseAuth } from "../lib/firebaseAdmin";
 
 export interface AuthenticatedRequest extends Request {
   userId: string;
+  userEmail?: string;
+  userDisplayName?: string;
 }
 
 export async function requireUser(
@@ -25,7 +27,11 @@ export async function requireUser(
   const idToken = authHeader.slice(7);
   try {
     const decoded = await getFirebaseAuth().verifyIdToken(idToken);
-    (req as AuthenticatedRequest).userId = decoded.uid;
+    const authenticatedReq = req as AuthenticatedRequest;
+    authenticatedReq.userId = decoded.uid;
+    // Custom claims set when the token was minted in /api/auth/google/callback.
+    authenticatedReq.userEmail = typeof decoded.email === "string" ? decoded.email : undefined;
+    authenticatedReq.userDisplayName = typeof decoded.name === "string" ? decoded.name : undefined;
     next();
   } catch (err) {
     req.log?.warn({ err }, "Failed to verify Firebase ID token");
