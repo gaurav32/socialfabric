@@ -148,8 +148,8 @@ export default function ProfileScreen() {
     queryFn: () => fetchWithCache("profile", getProfile),
   });
 
-  const displayName = profile?.displayName || user?.displayName || "Dev User";
-  const email = profile?.email || user?.email || "dev@socialfabric.app";
+  const displayName = profile?.displayName || user?.displayName || "Changemaker";
+  const email = profile?.email || user?.email || "";
   const referralCode = profile?.referralCode ?? FALLBACK_REFERRAL_CODE;
   const referralLink = `https://socialfabric.app/join?ref=${referralCode}`;
   const socialScore = profile?.socialScore ?? 720;

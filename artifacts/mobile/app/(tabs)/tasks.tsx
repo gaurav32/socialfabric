@@ -19,7 +19,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import { fetchWithCache } from "@/hooks/useApiCache";
-import { getTasks, useUpdateTask } from "@workspace/api-client-react";
+import { getProfile, getTasks, useUpdateTask } from "@workspace/api-client-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -309,7 +309,11 @@ export default function TasksScreen() {
     iconGradient: DEFAULT_GRADIENT,
   }));
 
-  const displayName = user?.displayName ?? "Dev User";
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => fetchWithCache("profile", getProfile),
+  });
+  const displayName = profile?.displayName || user?.displayName || "Changemaker";
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning," : hour < 17 ? "Good afternoon," : "Good evening,";

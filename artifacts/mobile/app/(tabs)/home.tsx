@@ -13,9 +13,12 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
+import { fetchWithCache } from "@/hooks/useApiCache";
+import { getProfile } from "@workspace/api-client-react";
 import QuestionDetailSheet from "@/components/QuestionDetailSheet";
 import type { Question } from "@/components/QuestionDetailSheet";
 import CampaignDetailSheet from "@/components/CampaignDetailSheet";
@@ -396,7 +399,12 @@ export default function HomeScreen() {
       ? MOCK_CAMPAIGNS.filter((c) => c.status === "joined")
       : MOCK_CAMPAIGNS;
 
-  const displayName = user?.displayName ?? user?.email?.split("@")[0] ?? "Changemaker";
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => fetchWithCache("profile", getProfile),
+  });
+  const displayName =
+    profile?.displayName || user?.displayName || user?.email?.split("@")[0] || "Changemaker";
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning," : hour < 17 ? "Good afternoon," : "Good evening,";
