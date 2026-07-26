@@ -63,17 +63,19 @@ All generated hooks use this module instead of raw `fetch`. It provides two glob
 
 ### Authentication
 
-**Mobile → Server flow:**
-1. Mobile uses Firebase Auth (Google OAuth or email). `AuthContext.tsx` wraps the entire app.
-2. On every API call, `setAuthTokenGetter` pulls the current Firebase user's ID token and sends it as `Authorization: Bearer`.
-3. The API server's `requireUser` middleware (`src/middleware/auth.ts`) reads the Bearer token and sets `req.userId`. It does **not** validate the token against Firebase — it trusts the raw token value as the user ID.
+Both web and native go through the **same server-side Google OAuth proxy** — the server is the only thing that ever talks to Google, and it hands the client a Firebase **custom token**, never a raw Google or Firebase ID token.
 
-**Google OAuth for native (non-web) platforms:**  
-Native can't use Firebase's popup; instead, the mobile app opens the server's `/api/auth/google/start` in a WebBrowser session. The server acts as an OAuth proxy: exchanges the code for tokens, extracts `id_token`, and deep-links back to the app via an Android `intent://` URL. The mobile `Linking` listener catches the deep link and signs in to Firebase with the `id_token`.
+**Google OAuth flow (web and native alike):**
+1. The mobile app opens `/api/auth/google/start?app_redirect_uri=<redirect>` — a WebBrowser session on native (`WebBrowser.openAuthSessionAsync`), a popup window on web.
+2. The server (`src/routes/auth.ts`) redirects to Google, then on `/api/auth/google/callback` exchanges the code for tokens, verifies Google's `id_token` (`oauth2Client.verifyIdToken`), and mints a Firebase custom token via the Admin SDK (`getFirebaseAuth().createCustomToken(`google:<sub>`, ...)`) — the Firebase UID is derived from Google's stable `sub` claim, prefixed `google:`.
+3. The server redirects back to `app_redirect_uri` with `?custom_token=<token>` — a plain HTTP(S) redirect for web, or (native) an Android `intent://` URL (falling back to the raw custom-scheme URL) to deep-link back into the app.
+4. **Native**: `AuthContext.tsx`'s `Linking` listener (or the `openAuthSessionAsync` result) extracts `custom_token` and calls `signInWithCustomToken`.
+5. **Web**: the popup lands on `app/auth/google-callback.tsx`, which `postMessage`s `{ type: "google-auth", customToken }` back to the opener window and closes itself; the opener (`AuthContext.tsx`) receives it and calls `signInWithCustomToken`.
 
-**Dev bypass flags:**
+**Every subsequent API call:** `setAuthTokenGetter` pulls the current Firebase user's **ID token** (`getIdToken()`, obtained after the custom-token sign-in) and sends it as `Authorization: Bearer`. The API server's `requireUser` middleware (`src/middleware/auth.ts`) verifies it via `getFirebaseAuth().verifyIdToken()` (Firebase Admin SDK, `src/lib/firebaseAdmin.ts`) and sets `req.userId` to the verified `uid` — it does not trust the raw header value.
+
+**Dev bypass flag:**
 - API server: set env var `BYPASS_AUTH=true` → `requireUser` sets `userId = "dev-user"` without checking a token.
-- Mobile: set `BYPASS_AUTH = true` constant in `artifacts/mobile/context/AuthContext.tsx:59` → skips Firebase and uses a mock user directly.
 
 ### Database
 
@@ -102,3 +104,5 @@ The root layout (`app/_layout.tsx`) sets up providers in order: `SafeAreaProvide
 | `GOOGLE_OAUTH_CLIENT_ID` | `api-server` | Google OAuth client ID |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | `api-server` | Google OAuth secret |
 | `GOOGLE_OAUTH_CALLBACK_URL` | `api-server` | OAuth redirect URL registered with Google |
+| `FIREBASE_SERVICE_ACCOUNT_KEY` | `api-server` | Firebase Admin SDK service account (JSON string) — mints/verifies Firebase tokens |
+| `ANDROID_PACKAGE_NAME` | `api-server` | Android package for the native OAuth deep-link `intent://` (defaults to `com.socialfabric.mobile`) |

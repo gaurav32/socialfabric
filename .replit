@@ -54,8 +54,8 @@ externalPort = 4200
 [userenv]
 
 [userenv.shared]
-EXPO_PUBLIC_API_URL = "https://a5fcae06-0b34-4951-9dfd-cef9d6f6c0c3-00-l4iig0njt0xp.pike.replit.dev"
-GOOGLE_OAUTH_CALLBACK_URL = "https://a5fcae06-0b34-4951-9dfd-cef9d6f6c0c3-00-l4iig0njt0xp.pike.replit.dev/api/auth/google/callback"
+EXPO_PUBLIC_API_URL="https://app.socialfabric.co.in"
+GOOGLE_OAUTH_CALLBACK_URL="https://app.socialfabric.co.in/api/auth/google/callback"
 
 [userenv.development]
 BYPASS_AUTH = "true"

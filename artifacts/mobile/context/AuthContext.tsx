@@ -1,13 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
-  GoogleAuthProvider,
   User,
   onAuthStateChanged,
-  signInWithCredential,
-  signInWithPopup,
+  signInWithCustomToken,
   signOut,
 } from "firebase/auth";
 import * as Linking from "expo-linking";
+import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Platform } from "react-native";
@@ -25,6 +24,7 @@ interface AuthContextType {
   signInWithPhone: () => Promise<void>;
   logout: () => Promise<void>;
   error: string | null;
+  setError: (error: string | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -34,21 +34,21 @@ const AuthContext = createContext<AuthContextType>({
   signInWithPhone: async () => {},
   logout: async () => {},
   error: null,
+  setError: () => {},
 });
 
-function extractIdToken(url: string): string | null {
+function extractCustomToken(url: string): string | null {
   try {
     const parsed = Linking.parse(url);
-    const token = parsed.queryParams?.["id_token"];
+    const token = parsed.queryParams?.["custom_token"];
     return typeof token === "string" ? token : null;
   } catch {
     return null;
   }
 }
 
-async function firebaseSignInWithToken(idToken: string) {
-  const credential = GoogleAuthProvider.credential(idToken);
-  await signInWithCredential(auth, credential);
+async function firebaseSignInWithCustomToken(customToken: string) {
+  await signInWithCustomToken(auth, customToken);
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -64,10 +64,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     function handleUrl({ url }: { url: string }) {
       if (!googlePendingRef.current) return;
       if (!url.includes("google-callback")) return;
-      const idToken = extractIdToken(url);
-      if (idToken) {
+      const customToken = extractCustomToken(url);
+      if (customToken) {
         googlePendingRef.current = false;
-        firebaseSignInWithToken(idToken).catch((e: unknown) => {
+        firebaseSignInWithCustomToken(customToken).catch((e: unknown) => {
           setError(e instanceof Error ? e.message : "Firebase sign-in failed");
         });
       }
@@ -79,12 +79,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => sub.remove();
   }, []);
 
+  // There's no global auth-gate redirect elsewhere in the app — index.tsx's
+  // own <Redirect> only fires while index.tsx is the mounted screen, which
+  // it isn't for native Google sign-in (that flow navigates to
+  // /auth/google-callback). Centralizing the post-sign-in redirect here
+  // means it fires regardless of which of the several native completion
+  // paths (openAuthSessionAsync result, the Linking safety-net, or
+  // google-callback.tsx) actually completes the sign-in first, without
+  // duplicating navigation logic in each of them. Skipped on the initial
+  // auth-state hydration so an already-signed-in cold start doesn't force
+  // an unwanted redirect away from wherever the app is opening to.
+  const isFirstAuthCheck = useRef(true);
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      const isFirstCheck = isFirstAuthCheck.current;
+      isFirstAuthCheck.current = false;
+
       setUser(firebaseUser);
       setLoading(false);
       if (firebaseUser) {
         await AsyncStorage.setItem("user_uid", firebaseUser.uid);
+        if (!isFirstCheck) {
+          router.replace("/(tabs)/home");
+        }
       } else {
         await AsyncStorage.removeItem("user_uid");
       }
@@ -92,12 +109,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return unsubscribe;
   }, []);
 
-  /** Web: Firebase handles the popup natively — no server proxy needed */
-  const signInWithGoogleWeb = async () => {
-    const provider = new GoogleAuthProvider();
-    provider.addScope("email");
-    provider.addScope("profile");
-    await signInWithPopup(auth, provider);
+  /** Web: same server-side OAuth proxy as native, via a popup window.
+   *
+   * The popup navigates through /api/auth/google/start → Google consent →
+   * /api/auth/google/callback, which redirects the popup to our own
+   * /auth/google-callback page with ?custom_token=. That page (running
+   * inside the popup) postMessages the token back to this window and
+   * closes itself — see app/auth/google-callback.tsx.
+   */
+  const signInWithGoogleWeb = () => {
+    return new Promise<void>((resolve, reject) => {
+      const appRedirectUri = `${window.location.origin}/auth/google-callback`;
+      const startUrl =
+        `${API_ORIGIN}/api/auth/google/start` +
+        `?app_redirect_uri=${encodeURIComponent(appRedirectUri)}`;
+
+      const popup = window.open(startUrl, "google-signin", "width=500,height=650");
+      if (!popup) {
+        reject(new Error("Popup was blocked. Please allow popups and try again."));
+        return;
+      }
+
+      let settled = false;
+
+      const pollTimer = window.setInterval(() => {
+        if (popup.closed && !settled) {
+          cleanup();
+          reject(new Error("Sign-in was cancelled."));
+        }
+      }, 500);
+
+      function cleanup() {
+        window.removeEventListener("message", onMessage);
+        window.clearInterval(pollTimer);
+      }
+
+      function onMessage(event: MessageEvent) {
+        if (event.origin !== window.location.origin) return;
+        if (event.data?.type !== "google-auth") return;
+
+        settled = true;
+        cleanup();
+        popup?.close();
+
+        if (event.data.error) {
+          reject(new Error(String(event.data.error)));
+          return;
+        }
+        const customToken = event.data.customToken;
+        if (typeof customToken !== "string") {
+          reject(new Error("No token received — please try again."));
+          return;
+        }
+        firebaseSignInWithCustomToken(customToken).then(resolve).catch(reject);
+      }
+
+      window.addEventListener("message", onMessage);
+    });
   };
 
   /** Native: server-side OAuth proxy → Linking listener
@@ -125,9 +193,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // "success" — Chrome detected the exp:// redirect and returned it
     if (result.type === "success") {
       googlePendingRef.current = false;
-      const idToken = extractIdToken(result.url);
-      if (idToken) {
-        await firebaseSignInWithToken(idToken);
+      const customToken = extractCustomToken(result.url);
+      if (customToken) {
+        await firebaseSignInWithCustomToken(customToken);
       } else {
         const parsed = Linking.parse(result.url);
         const oauthError = parsed.queryParams?.["error"];
@@ -178,7 +246,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, promptGoogleSignIn, signInWithPhone, logout, error }}
+      value={{ user, loading, promptGoogleSignIn, signInWithPhone, logout, error, setError }}
     >
       {children}
     </AuthContext.Provider>

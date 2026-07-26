@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { google } from "googleapis";
+import { getFirebaseAuth } from "../lib/firebaseAdmin";
 
 const router: IRouter = Router();
 
@@ -25,7 +26,11 @@ function getOAuthClient() {
     throw new Error("Missing GOOGLE_OAUTH_CALLBACK_URL");
   }
 
-  return { client: new google.auth.OAuth2(clientId, clientSecret, callbackUrl), callbackUrl };
+  return {
+    client: new google.auth.OAuth2(clientId, clientSecret, callbackUrl),
+    clientId,
+    callbackUrl,
+  };
 }
 
 /**
@@ -55,6 +60,8 @@ router.get("/auth/google/start", (req, res) => {
   } catch (err) {
     req.log.error({ err }, "Failed to start Google OAuth");
     res.status(500).json({ error: "OAuth configuration error" });
+  } finally {
+    req.log.info({ url: req.originalUrl }, "auth/google/start finished");
   }
 });
 
@@ -85,17 +92,32 @@ router.get("/auth/google/callback", async (req, res) => {
       return;
     }
 
-    const { client: oauth2Client } = getOAuthClient();
+    const { client: oauth2Client, clientId } = getOAuthClient();
     const { tokens } = await oauth2Client.getToken(code);
 
-    const idToken = tokens.id_token;
-    if (!idToken) {
+    const googleIdToken = tokens.id_token;
+    if (!googleIdToken) {
       throw new Error("No id_token in Google token response");
     }
-    req.log.info({ appRedirectUri }, "Received appRedirectUri");
+
+    // Verify Google's id_token (signature, audience, expiry) and use its
+    // payload to mint our own Firebase custom token — the client never sees
+    // Google's token, only a Firebase-issued one it can sign in with.
+    const ticket = await oauth2Client.verifyIdToken({ idToken: googleIdToken, audience: clientId });
+    const payload = ticket.getPayload();
+    if (!payload?.sub) {
+      throw new Error("Invalid Google id_token payload");
+    }
+
+    const firebaseUid = `google:${payload.sub}`;
+    const customToken = await getFirebaseAuth().createCustomToken(firebaseUid, {
+      email: payload.email,
+      name: payload.name,
+    });
+
     if (appRedirectUri) {
       const separator = appRedirectUri.includes("?") ? "&" : "?";
-      const finalUrl = `${appRedirectUri}${separator}id_token=${encodeURIComponent(idToken)}`;
+      const finalUrl = `${appRedirectUri}${separator}custom_token=${encodeURIComponent(customToken)}`;
       req.log.info({ finalUrl }, "Redirecting back to app");
 
       const scheme = new URL(finalUrl).protocol.replace(":", "");
@@ -124,15 +146,22 @@ router.get("/auth/google/callback", async (req, res) => {
       const userAgent = req.headers["user-agent"] ?? "";
       const isAndroid = /Android/i.test(userAgent);
 
+      // "exp" means the redirect is going back into Expo Go (dev testing),
+      // which is a different installed app from the standalone build and
+      // needs its own package name/fallback for the intent:// to resolve.
+      const isExpoGo = scheme === "exp";
+      const androidPackageName = isExpoGo ? "host.exp.exponent" : ANDROID_PACKAGE_NAME;
+      const androidFallbackUrl = isExpoGo ? "https://expo.dev/go" : ANDROID_PACKAGE_FALLBACK_URL;
+
       let intentUrl: string | null = null;
       if (isAndroid) {
         const parsed = new URL(finalUrl);
         const host = parsed.host;
         const pathAndQuery = parsed.pathname + parsed.search;
-        const fallback = encodeURIComponent(ANDROID_PACKAGE_FALLBACK_URL);
+        const fallback = encodeURIComponent(androidFallbackUrl);
         intentUrl =
           `intent://${host}${pathAndQuery}` +
-          `#Intent;scheme=${scheme};package=${ANDROID_PACKAGE_NAME};` +
+          `#Intent;scheme=${scheme};package=${androidPackageName};` +
           `S.browser_fallback_url=${fallback};end`;
       }
       req.log.info({ intentUrl, finalUrl }, "Deep-linking back to native app");
