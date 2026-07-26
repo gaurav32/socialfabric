@@ -411,34 +411,43 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
+      {/* ── Greeting + App Icon (fixed, doesn't scroll) ── */}
+      <View
+        style={[
+          styles.greetingRow,
+          styles.greetingRowFixed,
+          {
+            paddingTop: insets.top + (Platform.OS === "web" ? 67 : 0) + 12,
+            backgroundColor: colors.background,
+          },
+        ]}
+      >
+        <View style={styles.greetingSection}>
+          <Text style={[styles.greetingSmall, { color: colors.mutedForeground }]}>{greeting}</Text>
+          <Text style={[styles.greetingName, { color: colors.text }]}>{displayName} 👋</Text>
+          <View style={styles.communityRow}>
+            <View style={[styles.blueDot, { backgroundColor: colors.primary }]} />
+            <Text style={[styles.communityText, { color: colors.mutedForeground }]}>
+              Community for changemakers
+            </Text>
+          </View>
+        </View>
+        <Pressable onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
+          <Image
+            source={require("@/assets/images/icon.png")}
+            style={styles.appIconImage}
+          />
+        </Pressable>
+      </View>
+
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[
           styles.content,
-          { paddingTop: insets.top + (Platform.OS === "web" ? 67 : 0) + 12, paddingBottom: insets.bottom + 24 },
+          { paddingTop: 14, paddingBottom: insets.bottom + 24 },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Greeting + App Icon ── */}
-        <View style={styles.greetingRow}>
-          <View style={styles.greetingSection}>
-            <Text style={[styles.greetingSmall, { color: colors.mutedForeground }]}>{greeting}</Text>
-            <Text style={[styles.greetingName, { color: colors.text }]}>{displayName} 👋</Text>
-            <View style={styles.communityRow}>
-              <View style={[styles.blueDot, { backgroundColor: colors.primary }]} />
-              <Text style={[styles.communityText, { color: colors.mutedForeground }]}>
-                Community for changemakers
-              </Text>
-            </View>
-          </View>
-          <Pressable onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
-            <Image
-              source={require("@/assets/images/icon.png")}
-              style={styles.appIconImage}
-            />
-          </Pressable>
-        </View>
-
         {/* ── Live Map ── */}
         <LiveMapSection />
 
@@ -584,6 +593,7 @@ const styles = StyleSheet.create({
 
   // Greeting row
   greetingRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" },
+  greetingRowFixed: { paddingHorizontal: 16, paddingBottom: 12 },
   greetingSection: { flex: 1, gap: 3 },
   greetingSmall: { fontSize: 13 },
   greetingName: { fontSize: 26, fontWeight: "800", lineHeight: 32 },
