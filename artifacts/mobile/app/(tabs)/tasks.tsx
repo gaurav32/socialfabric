@@ -357,7 +357,7 @@ export default function TasksScreen() {
         colors={[colors.heroGradientStart, colors.background]}
         style={[
           styles.header,
-          { paddingTop: insets.top + (Platform.OS === "web" ? 67 : 0) + 16 },
+          { paddingTop: insets.top + 16 },
         ]}
       >
         <Text style={[styles.greeting, { color: colors.mutedForeground }]}>{greeting}</Text>
@@ -410,7 +410,7 @@ export default function TasksScreen() {
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 24 }]}
+        contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom }]}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
           <TaskCard

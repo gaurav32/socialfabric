@@ -196,7 +196,7 @@ export default function ProfileScreen() {
       style={[styles.root, Platform.OS === "web" && { overflow: "scroll" as "scroll" }]}
       contentContainerStyle={[
         styles.content,
-        { paddingTop: insets.top + (Platform.OS === "web" ? 67 : 0) + 12, paddingBottom: insets.bottom + 24 },
+        { paddingTop: insets.top + 12, paddingBottom: insets.bottom },
       ]}
       showsVerticalScrollIndicator={false}
     >

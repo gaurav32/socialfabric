@@ -5,7 +5,6 @@ import { router } from "expo-router";
 import React, { useState } from "react";
 import {
   Image,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -417,7 +416,7 @@ export default function HomeScreen() {
           styles.greetingRow,
           styles.greetingRowFixed,
           {
-            paddingTop: insets.top + (Platform.OS === "web" ? 67 : 0) + 12,
+            paddingTop: insets.top + 12,
             backgroundColor: colors.background,
           },
         ]}
@@ -444,7 +443,7 @@ export default function HomeScreen() {
         style={styles.scroll}
         contentContainerStyle={[
           styles.content,
-          { paddingTop: 14, paddingBottom: insets.bottom + 24 },
+          { paddingTop: 14, paddingBottom: insets.bottom },
         ]}
         showsVerticalScrollIndicator={false}
       >
