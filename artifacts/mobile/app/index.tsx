@@ -9,9 +9,9 @@ import {
   Image,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -29,6 +29,16 @@ export default function PreLoginScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user, loading, promptGoogleSignIn, signInWithPhone, error } = useAuth();
+  const { height: windowHeight } = useWindowDimensions();
+
+  // Scale spacing/font sizes down on shorter screens so the whole card
+  // always fits without scrolling. 780 is a comfortable reference height —
+  // kept fixed even though padding grew below, so the extra padding comes
+  // out of the same height budget instead of growing the box.
+  // Clamped so very short screens still shrink further and tall screens
+  // never grow past the designed size.
+  const scale = Math.min(1, Math.max(0.72, windowHeight / 780));
+  const sz = (base: number) => Math.round(base * scale);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
@@ -74,39 +84,76 @@ export default function PreLoginScreen() {
       colors={[colors.heroGradientStart, colors.heroGradientEnd]}
       style={styles.gradientBg}
     >
-      <ScrollView
-        contentContainerStyle={[
-          styles.scroll,
+      <View
+        style={[
+          styles.fit,
           {
-            paddingTop: insets.top + (Platform.OS === "web" ? 67 : 0) + 20,
-            paddingBottom: insets.bottom + (Platform.OS === "web" ? 34 : 0) + 32,
+            paddingTop: insets.top + (Platform.OS === "web" ? 67 : 0) + sz(20),
+            paddingBottom: insets.bottom + (Platform.OS === "web" ? 34 : 0) + sz(20),
           },
         ]}
-        showsVerticalScrollIndicator={false}
       >
         <Animated.View
-          style={[styles.card, { backgroundColor: colors.card, borderRadius: colors.radius * 1.5, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
+          style={[
+            styles.card,
+            {
+              backgroundColor: colors.card,
+              borderRadius: colors.radius * 1.5,
+              paddingHorizontal: sz(44),
+              paddingVertical: sz(32),
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
         >
           {/* Logo */}
-          <View style={[styles.iconWrapper, { backgroundColor: colors.primary, borderRadius: colors.radius }]}>
-            <Ionicons name="sparkles" size={32} color="#fff" />
+          <View
+            style={[
+              styles.iconWrapper,
+              {
+                backgroundColor: colors.primary,
+                borderRadius: colors.radius,
+                width: sz(64),
+                height: sz(64),
+                marginBottom: sz(14),
+              },
+            ]}
+          >
+            <Ionicons name="sparkles" size={sz(32)} color="#fff" />
           </View>
 
-          <Text style={[styles.appName, { color: colors.foreground }]}>Social Fabric</Text>
-          <View style={[styles.tagPill, { backgroundColor: colors.secondary, borderRadius: 20 }]}>
+          <Text style={[styles.appName, { color: colors.foreground, fontSize: sz(22), marginBottom: sz(6) }]}>
+            Social Fabric
+          </Text>
+          <View style={[styles.tagPill, { backgroundColor: colors.secondary, borderRadius: 20, marginBottom: sz(18) }]}>
             <Text style={[styles.tagText, { color: colors.primary }]}>Community for changemakers</Text>
           </View>
 
           {/* Hero */}
-          <Text style={[styles.heroText, { color: colors.foreground }]}>Fix what matters.{"\n"}Together.</Text>
-          <Text style={[styles.subText, { color: colors.mutedForeground }]}>
+          <Text
+            style={[
+              styles.heroText,
+              { color: colors.foreground, fontSize: sz(30), lineHeight: sz(38), marginBottom: sz(8) },
+            ]}
+          >
+            Fix what matters.{"\n"}Together.
+          </Text>
+          <Text
+            style={[
+              styles.subText,
+              { color: colors.mutedForeground, fontSize: sz(14), lineHeight: sz(22), marginBottom: sz(16) },
+            ]}
+          >
             Join 120,000+ young people tackling real problems — mental health, climate, inequality, and more.
           </Text>
 
           {/* Stats */}
-          <View style={styles.statsRow}>
+          <View style={[styles.statsRow, { marginBottom: sz(18) }]}>
             {STATS.map((stat) => (
-              <View key={stat.label} style={[styles.statChip, { backgroundColor: colors.statBg, borderRadius: 20 }]}>
+              <View
+                key={stat.label}
+                style={[styles.statChip, { backgroundColor: colors.statBg, borderRadius: 20, paddingVertical: sz(6) }]}
+              >
                 <Text style={[styles.statValue, { color: colors.primary }]}>{stat.value}</Text>
                 <Text style={[styles.statLabel, { color: colors.statText }]}>{stat.label}</Text>
               </View>
@@ -116,7 +163,10 @@ export default function PreLoginScreen() {
           {/* Buttons */}
           <Pressable
             onPress={handleGoogle}
-            style={({ pressed }) => [styles.outlineBtn, { borderColor: colors.border, borderRadius: colors.radius, opacity: pressed ? 0.75 : 1 }]}
+            style={({ pressed }) => [
+              styles.outlineBtn,
+              { borderColor: colors.border, borderRadius: colors.radius, paddingVertical: sz(12), opacity: pressed ? 0.75 : 1 },
+            ]}
           >
             <Image
               source={{ uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/32px-Google_%22G%22_logo.svg.png" }}
@@ -127,14 +177,23 @@ export default function PreLoginScreen() {
 
           <Pressable
             onPress={handlePhone}
-            style={({ pressed }) => [styles.outlineBtn, { borderColor: colors.border, borderRadius: colors.radius, opacity: pressed ? 0.75 : 1, marginTop: 12 }]}
+            style={({ pressed }) => [
+              styles.outlineBtn,
+              {
+                borderColor: colors.border,
+                borderRadius: colors.radius,
+                paddingVertical: sz(12),
+                opacity: pressed ? 0.75 : 1,
+                marginTop: sz(12),
+              },
+            ]}
           >
             <Ionicons name="call-outline" size={20} color={colors.primary} style={{ marginRight: 8 }} />
             <Text style={[styles.outlineBtnText, { color: colors.foreground }]}>Continue with Phone</Text>
           </Pressable>
 
           {/* Divider */}
-          <View style={styles.dividerRow}>
+          <View style={[styles.dividerRow, { marginVertical: sz(14) }]}>
             <View style={[styles.dividerLine, { backgroundColor: colors.divider }]} />
             <Text style={[styles.dividerText, { color: colors.mutedForeground }]}>or</Text>
             <View style={[styles.dividerLine, { backgroundColor: colors.divider }]} />
@@ -143,14 +202,17 @@ export default function PreLoginScreen() {
           {/* Email CTA */}
           <Pressable
             onPress={handleEmail}
-            style={({ pressed }) => [styles.primaryBtn, { backgroundColor: colors.primary, borderRadius: colors.radius, opacity: pressed ? 0.85 : 1 }]}
+            style={({ pressed }) => [
+              styles.primaryBtn,
+              { backgroundColor: colors.primary, borderRadius: colors.radius, paddingVertical: sz(14), opacity: pressed ? 0.85 : 1 },
+            ]}
           >
             <Text style={[styles.primaryBtnText, { color: colors.primaryForeground }]}>Get Started with Email</Text>
             <Ionicons name="arrow-forward" size={18} color={colors.primaryForeground} />
           </Pressable>
 
           {/* Sign in link */}
-          <Text style={[styles.signInRow, { color: colors.mutedForeground }]}>
+          <Text style={[styles.signInRow, { color: colors.mutedForeground, marginTop: sz(12) }]}>
             Already have an account?{" "}
             <Text onPress={handleSignIn} style={{ color: colors.linkText, fontFamily: "Inter_600SemiBold" }}>
               Sign in
@@ -159,19 +221,19 @@ export default function PreLoginScreen() {
 
           {/* Error */}
           {!!error && (
-            <View style={[styles.errorBox, { backgroundColor: colors.destructive + "22", borderRadius: colors.radius / 2 }]}>
+            <View style={[styles.errorBox, { backgroundColor: colors.destructive + "22", borderRadius: colors.radius / 2, marginTop: sz(14) }]}>
               <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
             </View>
           )}
 
           {/* Terms */}
-          <Text style={[styles.terms, { color: colors.mutedForeground }]}>
+          <Text style={[styles.terms, { color: colors.mutedForeground, marginTop: sz(12), lineHeight: sz(17) }]}>
             By continuing you agree to our{" "}
             <Text style={{ color: colors.linkText }}>Terms</Text> &{" "}
             <Text style={{ color: colors.linkText }}>Privacy Policy</Text>
           </Text>
         </Animated.View>
-      </ScrollView>
+      </View>
     </LinearGradient>
   );
 }
@@ -179,11 +241,11 @@ export default function PreLoginScreen() {
 const styles = StyleSheet.create({
   gradientBg: { flex: 1 },
   loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
-  scroll: { flexGrow: 1, paddingHorizontal: 20, alignItems: "center", justifyContent: "center" },
+  fit: { flex: 1, paddingHorizontal: 20, alignItems: "center", justifyContent: "center" },
   card: {
     width: "100%",
     maxWidth: 420,
-    padding: 28,
+    padding: 44,
     alignItems: "center",
     shadowColor: "#5B4FE8",
     shadowOffset: { width: 0, height: 8 },
