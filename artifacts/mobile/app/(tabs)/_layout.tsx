@@ -2,12 +2,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { Redirect, Tabs } from "expo-router";
 import React from "react";
 import { ActivityIndicator, Platform, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 
 export default function TabLayout() {
   const colors = useColors();
+  const insets = useSafeAreaInsets();
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -32,7 +34,9 @@ export default function TabLayout() {
           borderTopColor: colors.border,
           elevation: 0,
           shadowOpacity: 0,
-          height: Platform.OS === "web" ? 60 : 56,
+          height: (Platform.OS === "web" ? 60 : 56) + insets.bottom,
+          paddingBottom: insets.bottom,
+          paddingTop: 6,
         },
       }}
     >
