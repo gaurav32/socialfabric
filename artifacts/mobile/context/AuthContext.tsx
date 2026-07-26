@@ -16,9 +16,7 @@ import { auth } from "@/lib/firebase";
 
 WebBrowser.maybeCompleteAuthSession();
 
-const API_ORIGIN =
-  process.env["EXPO_PUBLIC_API_URL"] ??
-  "https://a5fcae06-0b34-4951-9dfd-cef9d6f6c0c3-00-l4iig0njt0xp.pike.replit.dev";
+const API_ORIGIN = "https://api.socialfabric.co.in";
 
 interface AuthContextType {
   user: User | null;
